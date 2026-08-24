@@ -29,7 +29,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var volumeLabel: TextView
     private lateinit var startBtn: Button
     private lateinit var stopBtn: Button
-    private lateinit var rootBtn: Button
     private lateinit var copyLogBtn: Button
     private lateinit var clearLogBtn: Button
     private lateinit var logText: TextView
@@ -41,12 +40,31 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // ---- Automatic root activation on first launch ----
+        if (!prefs.getBoolean("root_activated", false)) {
+            statusText.text = "درخواست دسترسی روت برای صدای داخلی…"
+            Thread {
+                val res = RootActivator.activate(this)
+                runOnUiThread {
+                    statusText.text = if (res.ok) {
+                        prefs.edit().putBoolean("root_activated", true).apply()
+                        res.message
+                    } else {
+                        LogBuffer.append("LiveDub.Root", "auto-activate FAILED: ${res.message}")
+                        "خطای روت: ${res.message} — بعداً از لاگ بررسی کنید"
+                    }
+                    refreshLog()
+                }
+            }.start()
+        } else if (RootActivator.isPrivileged(this)) {
+            statusText.text = "صدای داخلی: فعال ✓"
+        }
+
         apiKeyInput = findViewById(R.id.apiKeyInput)
         statusText = findViewById(R.id.statusText)
         volumeLabel = findViewById(R.id.volumeLabel)
         startBtn = findViewById(R.id.startBtn)
         stopBtn = findViewById(R.id.stopBtn)
-        rootBtn = findViewById(R.id.rootBtn)
         copyLogBtn = findViewById(R.id.copyLogBtn)
         clearLogBtn = findViewById(R.id.clearLogBtn)
         logText = findViewById(R.id.logText)
@@ -91,14 +109,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         stopBtn.setOnClickListener { stopDub() }
-
-        rootBtn.setOnClickListener {
-            statusText.text = "در حال ساخت ماژول روت…"
-            Thread {
-                val res = RootActivator.activate(this)
-                runOnUiThread { statusText.text = res.message }
-            }.start()
-        }
 
         copyLogBtn.setOnClickListener {
             val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager

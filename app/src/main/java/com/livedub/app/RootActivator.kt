@@ -33,6 +33,41 @@ object RootActivator {
         }
     }
 
+    /** True when the app is installed as priv-app with CAPTURE_AUDIO_OUTPUT granted. */
+    fun isPrivileged(context: Context): Boolean {
+        return try {
+            val pi = context.packageManager.getPackageInfo(
+                context.packageName,
+                android.content.pm.PackageManager.GET_PERMISSIONS
+            )
+            val idx = pi.requestedPermissions?.indexOf(android.Manifest.permission.CAPTURE_AUDIO_OUTPUT) ?: -1
+            if (idx >= 0) {
+                // Requested via privapp whitelist; check it's actually granted
+                val pm = context.packageManager
+                val permInfo = pm.getPermissionInfo(android.Manifest.permission.CAPTURE_AUDIO_OUTPUT, 0)
+                context.checkSelfPermission(permInfo.name) ==
+                    android.content.pm.PackageManager.PERMISSION_GRANTED
+            } else {
+                // Not in requestedPermissions — check via manifest declared in whitelist
+                try {
+                    val cmd = arrayOf("su", "-c",
+                        "test -f /data/adb/modules/livedub_priv/system/etc/permissions/" +
+                        "privapp-permissions-com.livedub.app.xml && echo YES || echo NO")
+                    val p2 = ProcessBuilder(*cmd).start()
+                    val out2 = p2.inputStream.bufferedReader().readText()
+                    p2.waitFor()
+                    out2.contains("YES") && File(
+                        "/data/adb/modules/livedub_priv/module.prop"
+                    ).exists().let { true }
+                } catch (e: Exception) {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            false
+        }
+    }
+
     fun activate(context: Context): Result {
         if (!hasRoot()) return Result(false, "دسترسی روت در دسترس نیست")
 

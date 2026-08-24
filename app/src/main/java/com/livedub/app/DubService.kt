@@ -31,7 +31,6 @@ class DubService : Service() {
     }
 
     private val running = AtomicBoolean(false)
-    private lateinit var audioRecord: AudioRecord
     private var playbackThread: Thread? = null
     private var captureThread: Thread? = null
     private var ws: WebSocketClient? = null
@@ -141,17 +140,28 @@ class DubService : Service() {
         content.optJSONObject("outputTranscription")?.optString("text")?.let {
             if (it.isNotBlank()) setStatus("دوبله: $it")
         }
-        val modelTurn = content.optJSONObject("modelTurn") ?: return
-        val parts = modelTurn.optJSONArray("parts") ?: return
-        for (i in 0 until parts.length()) {
-            val inline = parts.optJSONObject(i)?.optJSONObject("inlineData") ?: continue
-            val b64 = inline.optString("data")
-            if (b64.isNotEmpty()) {
-                val pcm = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
-                enqueuePlayback(pcm)
+        val modelTurn = content.optJSONObject("modelTurn")
+        if (modelTurn != null) {
+            val parts = modelTurn.optJSONArray("parts") ?: return
+            for (i in 0 until parts.length()) {
+                val inline = parts.optJSONObject(i)?.optJSONObject("inlineData") ?: continue
+                val b64 = inline.optString("data")
+                if (b64.isNotEmpty()) {
+                    val pcm = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
+                    audioChunksReceived++
+                    if (audioChunksReceived % 50L == 1L) {
+                        log("audio out: chunk#$audioChunksReceived (${pcm.size}B pcm, queue=${playbackQueue.size})")
+                    }
+                    enqueuePlayback(pcm)
+                }
             }
         }
+        if (content.has("turnComplete") || content.optBoolean("turnComplete")) {
+            log("turn complete (total audio chunks: $audioChunksReceived)")
+        }
     }
+
+    private var audioChunksReceived = 0L
 
     @SuppressLint("MissingPermission")
     private fun startAudioPipeline() {
@@ -189,56 +199,62 @@ class DubService : Service() {
             track.stop(); track.release()
         }.also { it.start() }
 
-        // ---- Capture: INTERNAL device audio (works with headphones, no mic noise) ----
-        // REMOTE_SUBMIX captures the system's audio output mix directly. It requires
-        // the signature-level CAPTURE_AUDIO_OUTPUT permission which we get by being
-        // installed as a priv-app via the in-app root activation (RootActivator).
-        // Fallback: MIC (noisy, needs speakers).
+        // ---- Capture: INTERNAL device audio ONLY (no mic fallback) ----
         val inMinBuf = AudioRecord.getMinBufferSize(
             16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
         )
-        val source = if (useInternalAudio()) {
-            log("capture source=REMOTE_SUBMIX (internal)")
-            MediaRecorder.AudioSource.REMOTE_SUBMIX
-        } else {
-            log("capture source=MIC (fallback — no root priv)")
-            MediaRecorder.AudioSource.MIC
+        if (!useInternalAudio()) {
+            LogBuffer.append(TAG, "capture ABORT: app is not privileged (CAPTURE_AUDIO_OUTPUT missing)")
+            setStatus("صدا داخلی فعال نیست — دسترسی روت داده شد؟ یکبار ریبوت لازم است")
+            cleanup()
+            stopSelf()
+            return
         }
-        audioRecord = try {
+        val source = MediaRecorder.AudioSource.REMOTE_SUBMIX
+        log("capture source=REMOTE_SUBMIX (internal)")
+        val audioRecord = try {
             AudioRecord(
                 source,
                 16000,
                 AudioFormat.CHANNEL_IN_MONO,
                 AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(inMinBuf, 16000 * 2) // ~100ms+ chunks
+                maxOf(inMinBuf, 16000 * 2)
             ).also { rec ->
-                // Sanity check: REMOTE_SUBMIX silently returns silence when not permitted
                 if (rec.state != AudioRecord.STATE_INITIALIZED) {
-                    throw IllegalStateException("init failed for source=$source")
+                    throw IllegalStateException("init failed for REMOTE_SUBMIX")
                 }
+                log("AudioRecord initialized ok, buffer=${maxOf(inMinBuf, 16000 * 2)} bytes")
             }
         } catch (e: Exception) {
-            Log.w(TAG, "capture source=$source failed (${e.message}), falling back to MIC")
-            setStatus("دسترسی صدا داخلی نبود — استفاده از میکروفن")
-            AudioRecord(
-                MediaRecorder.AudioSource.MIC,
-                16000,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(inMinBuf, 16000 * 2)
-            )
+            log("REMOTE_SUBMIX init FAILED: ${e.message}")
+            setStatus("شروع ضبط داخلی ممکن نشد: ${e.message}")
+            stopSelf()
+            return
         }
         val buf = ByteArray(3200) // 100ms of 16kHz 16-bit mono
         captureThread = Thread {
             try {
                 audioRecord.startRecording()
+                log("capture thread running, recording=${audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING}")
             } catch (e: Exception) {
-                Log.e(TAG, "startRecording failed", e)
+                log("startRecording failed: ${e.message}")
                 return@Thread
             }
+            var chunksSent = 0L
+            var bytesSent = 0L
             while (running.get()) {
                 val n = audioRecord.read(buf, 0, buf.size)
                 if (n > 0) {
+                    chunksSent++; bytesSent += n
+                    if (chunksSent % 100 == 10L) {
+                        // periodic heartbeat: ~every 10s
+                        val peak = rms(buf, n)
+                        log("capture alive: chunk#$chunksSent (${bytesSent / 1024}KB sent), rms=$peak")
+                    }
+                    if (n < buf.size / 4) {
+                        // Mostly-silence chunk: worth logging once in a while
+                        if (chunksSent % 300 == 11L) log("capture mostly silent (n=$n) — check audio routing")
+                    }
                     val b64 = android.util.Base64.encodeToString(buf.copyOf(n), android.util.Base64.NO_WRAP)
                     val m = JSONObject().put(
                         "realtimeInput",
@@ -247,27 +263,37 @@ class DubService : Service() {
                             JSONObject().put("data", b64).put("mimeType", "audio/pcm;rate=16000")
                         )
                     )
-                    try { ws?.send(m.toString()) } catch (e: Exception) { Log.e(TAG, "send fail", e) }
+                    try { ws?.send(m.toString()) } catch (e: Exception) { log("ws send fail: ${e.message}") }
+                } else if (n < 0) {
+                    log("AudioRecord.read error n=$n")
                 }
             }
+            log("capture stopped after $chunksSent chunks / ${bytesSent / 1024}KB")
             audioRecord.stop(); audioRecord.release()
         }.also { it.start() }
+    }
+
+    /** Root-mean-square loudness of a PCM16 buffer — for diagnosing silence. */
+    private fun rms(buf: ByteArray, len: Int): Int {
+        var sum = 0L; var cnt = 0
+        var i = 0
+        while (i + 1 < len) {
+            val sample = ((buf[i + 1].toInt() and 0xFF) shl 8) or (buf[i].toInt() and 0xFF)
+            sum += sample.toLong() * sample
+            cnt++
+            i += 2
+        }
+        return if (cnt == 0) 0 else kotlin.math.sqrt(sum / cnt.toDouble()).toInt()
     }
 
     private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<ByteArray>()
 
     private fun useInternalAudio(): Boolean {
-        // REMOTE_SUBMIX needs CAPTURE_AUDIO_OUTPUT (signature|privileged).
-        return try {
-            val pi = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
-            pi.applicationInfo?.let { appInfo ->
-                ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) &&
-                checkSelfPermission("android.permission.CAPTURE_AUDIO_OUTPUT") ==
-                    PackageManager.PERMISSION_GRANTED
-            } ?: false
-        } catch (e: Exception) {
-            false
-        }
+        val privileged = RootActivator.isPrivileged(this)
+        log("privilege check: FLAG_SYSTEM=${(applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0}, " +
+            "CAPTURE_AUDIO_OUTPUT granted=${checkSelfPermission("android.permission.CAPTURE_AUDIO_OUTPUT") == PackageManager.PERMISSION_GRANTED}, " +
+            "isPrivileged=$privileged")
+        return privileged
     }
 
     private fun enqueuePlayback(pcm: ByteArray) {
@@ -292,6 +318,11 @@ class DubService : Service() {
     private fun log(m: String) {
         Log.i(TAG, m)
         LogBuffer.append(TAG, m)
+    }
+
+    private fun cleanup() {
+        running.set(false)
+        try { ws?.close() } catch (_: Exception) {}
     }
 
     override fun onDestroy() {
