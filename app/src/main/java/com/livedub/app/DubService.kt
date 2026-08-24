@@ -105,24 +105,23 @@ class DubService : Service() {
     }
 
     private fun sendSetupMessage() {
-        // Per v1beta BidiGenerateContentSetup proto (ai.google.dev/api/live),
-        // transcription configs and translationConfig live at the SETUP level,
-        // NOT inside generationConfig. The live-translate guide's snippet is
-        // misleading; placing them inside generationConfig causes:
-        // "Unknown name ... at 'setup.generation_config'".
+        // Field map verified against google-genai SDK (_live_converters.py,
+        // _LiveConnectConfig_to_mldev):
+        //  - input/outputAudioTranscription -> setup level
+        //  - translationConfig -> INSIDE generationConfig
         val generationConfig = JSONObject()
             .put("responseModalities", org.json.JSONArray().put("AUDIO"))
-        val setupInner = JSONObject()
-            .put("model", "models/gemini-3.5-live-translate-preview")
-            .put("generationConfig", generationConfig)
-            .put("inputAudioTranscription", JSONObject())
-            .put("outputAudioTranscription", JSONObject())
             .put(
                 "translationConfig",
                 JSONObject()
                     .put("targetLanguageCode", "fa")
                     .put("echoTargetLanguage", true)
             )
+        val setupInner = JSONObject()
+            .put("model", "models/gemini-3.5-live-translate-preview")
+            .put("generationConfig", generationConfig)
+            .put("inputAudioTranscription", JSONObject())
+            .put("outputAudioTranscription", JSONObject())
         val setup = JSONObject().put("setup", setupInner)
         log(">> setup sent (target=fa)")
         ws?.send(setup.toString())
