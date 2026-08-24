@@ -30,6 +30,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var startBtn: Button
     private lateinit var stopBtn: Button
     private lateinit var rootBtn: Button
+    private lateinit var copyLogBtn: Button
+    private lateinit var clearLogBtn: Button
+    private lateinit var logText: TextView
     private lateinit var volumeBar: SeekBar
 
     private val prefs by lazy { getSharedPreferences("livedub", MODE_PRIVATE) }
@@ -44,6 +47,9 @@ class MainActivity : AppCompatActivity() {
         startBtn = findViewById(R.id.startBtn)
         stopBtn = findViewById(R.id.stopBtn)
         rootBtn = findViewById(R.id.rootBtn)
+        copyLogBtn = findViewById(R.id.copyLogBtn)
+        clearLogBtn = findViewById(R.id.clearLogBtn)
+        logText = findViewById(R.id.logText)
         volumeBar = findViewById(R.id.dubVolumeBar)
 
         apiKeyInput.setText(prefs.getString("api_key", ""))
@@ -93,6 +99,42 @@ class MainActivity : AppCompatActivity() {
                 runOnUiThread { statusText.text = res.message }
             }.start()
         }
+
+        copyLogBtn.setOnClickListener {
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            clipboard.setPrimaryClip(
+                android.content.ClipData.newPlainText("LiveDub logs", LogBuffer.dump())
+            )
+            Toast.makeText(this, "لاگ‌ها کپی شد", Toast.LENGTH_SHORT).show()
+        }
+
+        clearLogBtn.setOnClickListener {
+            LogBuffer.clear()
+            refreshLog()
+            Toast.makeText(this, "لاگ‌ها پاک شد", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val logRefresher = object : Runnable {
+        override fun run() {
+            refreshLog()
+            logText.postDelayed(this, 1000)
+        }
+    }
+
+    private fun refreshLog() {
+        logText.text = LogBuffer.dump().ifEmpty { "لاگ‌ها…" }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshLog()
+        logText.post(logRefresher)
+    }
+
+    override fun onPause() {
+        logText.removeCallbacks(logRefresher)
+        super.onPause()
     }
 
     private fun hasMicPermission() =

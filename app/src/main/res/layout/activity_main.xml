@@ -72,5 +72,39 @@
             android:layout_height="wrap_content"
             android:enabled="false"
             android:text="@string/stop" />
+
+        <TextView
+            android:id="@+id/logText"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:layout_marginTop="16dp"
+            android:background="#101010"
+            android:textColor="#9FE89F"
+            android:textSize="11sp"
+            android:padding="8dp"
+            android:scrollbars="vertical"
+            android:textIsSelectable="true"
+            android:text="لاگ‌ها…" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="8dp">
+
+            <Button
+                android:id="@+id/copyLogBtn"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="کپی لاگ‌ها" />
+
+            <Button
+                android:id="@+id/clearLogBtn"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="حذف لاگ‌ها" />
+        </LinearLayout>
     </LinearLayout>
 </ScrollView>

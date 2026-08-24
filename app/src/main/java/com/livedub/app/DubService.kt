@@ -80,20 +80,24 @@ class DubService : Service() {
         val url = URI("wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey")
         ws = object : WebSocketClient(url) {
             override fun onOpen(handshakedata: ServerHandshake?) {
-                Log.i(TAG, "WS connected")
+                log("WS connected")
                 sendSetupMessage()
             }
             override fun onMessage(message: String?) {
-                message?.let { handleServerMessage(JSONObject(it)) }
+                message?.let {
+                    // Log raw server messages (truncated) except bulky audio
+                    if (it.length < 600) log("<< $it")
+                    try { handleServerMessage(JSONObject(it)) } catch (e: Exception) { log("parse err: ${e.message}") }
+                }
             }
             override fun onMessage(bytes: ByteBuffer?) {}
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
-                Log.i(TAG, "WS closed: $reason")
+                log("WS closed code=$code reason=$reason remote=$remote")
                 setStatus("قطع شد: ${reason ?: code}")
                 stopSelf()
             }
             override fun onError(ex: Exception?) {
-                Log.e(TAG, "WS error", ex)
+                log("WS error: ${ex?.message}")
                 setStatus("خطا: ${ex?.message}")
             }
         }
@@ -101,24 +105,26 @@ class DubService : Service() {
     }
 
     private fun sendSetupMessage() {
-        val setup = JSONObject().put(
-            "setup",
-            JSONObject()
-                .put("model", "models/gemini-3.5-live-translate-preview")
-                .put(
-                    "generationConfig",
-                    JSONObject()
-                        .put("responseModalities", org.json.JSONArray().put("AUDIO"))
-                        .put("inputAudioTranscription", JSONObject())
-                        .put("outputAudioTranscription", JSONObject())
-                        .put(
-                            "translationConfig",
-                            JSONObject()
-                                .put("targetLanguageCode", "fa")
-                                .put("echoTargetLanguage", true)
-                        )
-                )
-        )
+        // Per v1beta BidiGenerateContentSetup proto (ai.google.dev/api/live),
+        // transcription configs and translationConfig live at the SETUP level,
+        // NOT inside generationConfig. The live-translate guide's snippet is
+        // misleading; placing them inside generationConfig causes:
+        // "Unknown name ... at 'setup.generation_config'".
+        val generationConfig = JSONObject()
+            .put("responseModalities", org.json.JSONArray().put("AUDIO"))
+        val setupInner = JSONObject()
+            .put("model", "models/gemini-3.5-live-translate-preview")
+            .put("generationConfig", generationConfig)
+            .put("inputAudioTranscription", JSONObject())
+            .put("outputAudioTranscription", JSONObject())
+            .put(
+                "translationConfig",
+                JSONObject()
+                    .put("targetLanguageCode", "fa")
+                    .put("echoTargetLanguage", true)
+            )
+        val setup = JSONObject().put("setup", setupInner)
+        log(">> setup sent (target=fa)")
         ws?.send(setup.toString())
         setStatus("متصل — در حال شروع دوبله…")
         startAudioPipeline()
@@ -193,8 +199,10 @@ class DubService : Service() {
             16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
         )
         val source = if (useInternalAudio()) {
+            log("capture source=REMOTE_SUBMIX (internal)")
             MediaRecorder.AudioSource.REMOTE_SUBMIX
         } else {
+            log("capture source=MIC (fallback — no root priv)")
             MediaRecorder.AudioSource.MIC
         }
         audioRecord = try {
@@ -278,7 +286,13 @@ class DubService : Service() {
     }
 
     private fun setStatus(s: String) {
+        LogBuffer.append("status", s)
         mainHandler.post { MainActivity.updateStatusStatic(s) }
+    }
+
+    private fun log(m: String) {
+        Log.i(TAG, m)
+        LogBuffer.append(TAG, m)
     }
 
     override fun onDestroy() {
