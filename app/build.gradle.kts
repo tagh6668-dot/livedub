@@ -20,6 +20,11 @@ android {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
+        // Stable debug keystore committed to the repo so every CI build has the
+        // same signature (required for in-place priv-app reinstalls).
+        debug {
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
