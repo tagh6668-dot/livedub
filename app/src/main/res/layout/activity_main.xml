@@ -60,6 +60,13 @@
             android:text="@string/start" />
 
         <Button
+            android:id="@+id/rootBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="فعال‌سازی صدا داخلی (روت)" />
+
+        <Button
             android:id="@+id/stopBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

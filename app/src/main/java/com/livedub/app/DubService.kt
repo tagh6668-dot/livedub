@@ -6,6 +6,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.*
 import android.os.Build
 import android.os.Handler
@@ -183,20 +184,51 @@ class DubService : Service() {
             track.stop(); track.release()
         }.also { it.start() }
 
-        // ---- Capture: mic / device audio at 16kHz ----
+        // ---- Capture: INTERNAL device audio (works with headphones, no mic noise) ----
+        // REMOTE_SUBMIX captures the system's audio output mix directly. It requires
+        // the signature-level CAPTURE_AUDIO_OUTPUT permission which we get by being
+        // installed as a priv-app via the in-app root activation (RootActivator).
+        // Fallback: MIC (noisy, needs speakers).
         val inMinBuf = AudioRecord.getMinBufferSize(
             16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
         )
-        audioRecord = AudioRecord(
-            MediaRecorder.AudioSource.MIC,
-            16000,
-            AudioFormat.CHANNEL_IN_MONO,
-            AudioFormat.ENCODING_PCM_16BIT,
-            maxOf(inMinBuf, 16000 * 2) // ~100ms+ chunks
-        )
+        val source = if (useInternalAudio()) {
+            MediaRecorder.AudioSource.REMOTE_SUBMIX
+        } else {
+            MediaRecorder.AudioSource.MIC
+        }
+        audioRecord = try {
+            AudioRecord(
+                source,
+                16000,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                maxOf(inMinBuf, 16000 * 2) // ~100ms+ chunks
+            ).also { rec ->
+                // Sanity check: REMOTE_SUBMIX silently returns silence when not permitted
+                if (rec.state != AudioRecord.STATE_INITIALIZED) {
+                    throw IllegalStateException("init failed for source=$source")
+                }
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "capture source=$source failed (${e.message}), falling back to MIC")
+            setStatus("دسترسی صدا داخلی نبود — استفاده از میکروفن")
+            AudioRecord(
+                MediaRecorder.AudioSource.MIC,
+                16000,
+                AudioFormat.CHANNEL_IN_MONO,
+                AudioFormat.ENCODING_PCM_16BIT,
+                maxOf(inMinBuf, 16000 * 2)
+            )
+        }
         val buf = ByteArray(3200) // 100ms of 16kHz 16-bit mono
         captureThread = Thread {
-            audioRecord.startRecording()
+            try {
+                audioRecord.startRecording()
+            } catch (e: Exception) {
+                Log.e(TAG, "startRecording failed", e)
+                return@Thread
+            }
             while (running.get()) {
                 val n = audioRecord.read(buf, 0, buf.size)
                 if (n > 0) {
@@ -216,6 +248,20 @@ class DubService : Service() {
     }
 
     private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<ByteArray>()
+
+    private fun useInternalAudio(): Boolean {
+        // REMOTE_SUBMIX needs CAPTURE_AUDIO_OUTPUT (signature|privileged).
+        return try {
+            val pi = packageManager.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+            pi.applicationInfo?.let { appInfo ->
+                ((appInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0) &&
+                checkSelfPermission("android.permission.CAPTURE_AUDIO_OUTPUT") ==
+                    PackageManager.PERMISSION_GRANTED
+            } ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
 
     private fun enqueuePlayback(pcm: ByteArray) {
         playbackQueue.add(pcm)

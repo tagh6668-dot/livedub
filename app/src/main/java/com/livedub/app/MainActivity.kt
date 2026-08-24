@@ -29,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var volumeLabel: TextView
     private lateinit var startBtn: Button
     private lateinit var stopBtn: Button
+    private lateinit var rootBtn: Button
     private lateinit var volumeBar: SeekBar
 
     private val prefs by lazy { getSharedPreferences("livedub", MODE_PRIVATE) }
@@ -42,6 +43,7 @@ class MainActivity : AppCompatActivity() {
         volumeLabel = findViewById(R.id.volumeLabel)
         startBtn = findViewById(R.id.startBtn)
         stopBtn = findViewById(R.id.stopBtn)
+        rootBtn = findViewById(R.id.rootBtn)
         volumeBar = findViewById(R.id.dubVolumeBar)
 
         apiKeyInput.setText(prefs.getString("api_key", ""))
@@ -83,6 +85,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         stopBtn.setOnClickListener { stopDub() }
+
+        rootBtn.setOnClickListener {
+            statusText.text = "در حال ساخت ماژول روت…"
+            Thread {
+                val res = RootActivator.activate(this)
+                runOnUiThread { statusText.text = res.message }
+            }.start()
+        }
     }
 
     private fun hasMicPermission() =
