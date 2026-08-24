@@ -171,7 +171,8 @@ class DubService : Service() {
 
         playbackThread = Thread {
             while (running.get()) {
-                val chunk = playbackQueue.poll() ?: run {
+                val chunk = playbackQueue.poll()
+                if (chunk == null) {
                     try { Thread.sleep(10) } catch (_: InterruptedException) {}
                     continue
                 }

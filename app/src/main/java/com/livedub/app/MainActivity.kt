@@ -48,7 +48,7 @@ class MainActivity : AppCompatActivity() {
         volumeBar.progress = prefs.getInt("dub_volume_pct", 80)
         volumeLabel.text = "${volumeBar.progress}٪"
 
-        statusConsumer = { runOnUiThread { statusText.text = s } }
+        statusConsumer = { s -> runOnUiThread { statusText.text = s } }
 
         volumeBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -121,12 +121,16 @@ class MainActivity : AppCompatActivity() {
             try {
                 val am = getSystemService(AUDIO_SERVICE) as AudioManager
                 val configs: List<AudioPlaybackConfiguration> = am.activePlaybackConfigurations
-                val myUid = android.os.Process.myUid()
                 for (cfg in configs) {
                     val ua = cfg.audioAttributes.usage
                     if (ua != AudioAttributes.USAGE_MEDIA && ua != AudioAttributes.USAGE_GAME) continue
-                    val pid = cfg.clientPid  // hmm: hidden field access may fail
-                    // Reflection path — see RootVolumeHelper
+                    // mClientPid is hidden — read via reflection; 0 on failure (skip)
+                    val pid = try {
+                        val f = cfg.javaClass.getDeclaredField("mClientPid")
+                        f.isAccessible = true
+                        f.getInt(cfg)
+                    } catch (e: Exception) { 0 }
+                    if (pid == android.os.Process.myPid()) continue
                     RootVolumeHelper.setAppVolume(this, cfg, pid, multiplier)
                 }
             } catch (e: Exception) {
