@@ -5,3 +5,5 @@ local.properties
 build/
 captures/
 .externalNativeBuild/
+*.apk
+!app/debug.keystore
