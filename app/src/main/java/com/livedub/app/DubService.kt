@@ -60,19 +60,18 @@ class DubService : Service() {
             val ch = NotificationChannel(CHANNEL_ID, "LiveDub", NotificationManager.IMPORTANCE_LOW)
             nm.createNotificationChannel(ch)
         }
-        val notif: Notification = if (Build.VERSION.SDK_INT >= 33) {
-            Notification.Builder(this, CHANNEL_ID)
-                .setContentTitle("دوبله زنده فعال")
-                .setContentText("در حال ترجمه همزمان صدا به فارسی")
-                .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                .build()
+        val notif = Notification.Builder(this, CHANNEL_ID)
+            .setContentTitle("دوبله زنده فعال")
+            .setContentText("در حال ترجمه همزمان صدا به فارسی")
+            .setSmallIcon(android.R.drawable.ic_btn_speak_now)
+            .build()
+        if (Build.VERSION.SDK_INT >= 34) {
+            startForeground(1, notif,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE)
         } else {
-            Notification.Builder(this)
-                .setContentTitle("دوبله زنده فعال")
-                .setSmallIcon(android.R.drawable.ic_btn_speak_now)
-                .build()
+            startForeground(1, notif)
         }
-        startForeground(1, notif)
     }
 
     private fun connectWebSocket(apiKey: String) {
@@ -194,7 +193,7 @@ class DubService : Service() {
                 }
                 // Apply dub/original volume ratio by scaling samples
                 applyGain(chunk, dubVolumeRatio)
-                track.write(chunk, chunk.size, AudioTrack.WRITE_BLOCKING)
+                track.write(chunk, 0, chunk.size, AudioTrack.WRITE_BLOCKING)
             }
             track.stop(); track.release()
         }.also { it.start() }

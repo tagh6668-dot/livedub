@@ -40,6 +40,16 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        apiKeyInput = findViewById(R.id.apiKeyInput)
+        statusText = findViewById(R.id.statusText)
+        volumeLabel = findViewById(R.id.volumeLabel)
+        startBtn = findViewById(R.id.startBtn)
+        stopBtn = findViewById(R.id.stopBtn)
+        copyLogBtn = findViewById(R.id.copyLogBtn)
+        clearLogBtn = findViewById(R.id.clearLogBtn)
+        logText = findViewById(R.id.logText)
+        volumeBar = findViewById(R.id.dubVolumeBar)
+
         // ---- Automatic root activation on first launch ----
         if (!prefs.getBoolean("root_activated", false)) {
             statusText.text = "درخواست دسترسی روت برای صدای داخلی…"
@@ -59,16 +69,6 @@ class MainActivity : AppCompatActivity() {
         } else if (RootActivator.isPrivileged(this)) {
             statusText.text = "صدای داخلی: فعال ✓"
         }
-
-        apiKeyInput = findViewById(R.id.apiKeyInput)
-        statusText = findViewById(R.id.statusText)
-        volumeLabel = findViewById(R.id.volumeLabel)
-        startBtn = findViewById(R.id.startBtn)
-        stopBtn = findViewById(R.id.stopBtn)
-        copyLogBtn = findViewById(R.id.copyLogBtn)
-        clearLogBtn = findViewById(R.id.clearLogBtn)
-        logText = findViewById(R.id.logText)
-        volumeBar = findViewById(R.id.dubVolumeBar)
 
         apiKeyInput.setText(prefs.getString("api_key", ""))
         volumeBar.progress = prefs.getInt("dub_volume_pct", 80)
