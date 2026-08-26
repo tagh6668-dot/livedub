@@ -1,17 +1,21 @@
 package com.livedub.app
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.AudioPlaybackConfiguration
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -36,6 +40,9 @@ class MainActivity : AppCompatActivity() {
 
     private val prefs by lazy { getSharedPreferences("livedub", MODE_PRIVATE) }
 
+    private lateinit var mediaProjectionLauncher: ActivityResultLauncher<Intent>
+    private var pendingApiKey: String? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -49,6 +56,22 @@ class MainActivity : AppCompatActivity() {
         clearLogBtn = findViewById(R.id.clearLogBtn)
         logText = findViewById(R.id.logText)
         volumeBar = findViewById(R.id.dubVolumeBar)
+
+        // Register MediaProjection request launcher
+        mediaProjectionLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+                val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+                val projection = mpm.getMediaProjection(result.resultCode, result.data!!)
+                DubService.pendingProjection = projection
+                pendingApiKey?.let { startDubService(it) }
+            } else {
+                statusText.text = "دسترسی ضبط صفحه رد شد — دوبله ممکن نیست"
+                startBtn.isEnabled = true
+            }
+            pendingApiKey = null
+        }
 
         // ---- Automatic root activation on first launch ----
         if (!prefs.getBoolean("root_activated", false)) {
@@ -150,14 +173,28 @@ class MainActivity : AppCompatActivity() {
     private fun hasMicPermission() =
         ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
+    /**
+     * Request MediaProjection permission, then start the dub service.
+     * AudioPlaybackCapture requires a MediaProjection token.
+     */
     private fun startDub(apiKey: String) {
+        pendingApiKey = apiKey
+        startBtn.isEnabled = false
+        statusText.text = "درخواست مجوز ضبط صدای داخلی…"
+        val mpm = getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+        mediaProjectionLauncher.launch(mpm.createScreenCaptureIntent())
+    }
+
+    /**
+     * Actually start the DubService after MediaProjection is obtained.
+     */
+    private fun startDubService(apiKey: String) {
         val pct = volumeBar.progress
         val intent = Intent(this, DubService::class.java).apply {
             putExtra("api_key", apiKey)
             putExtra("dub_volume", pct / 100f)
         }
         ContextCompat.startForegroundService(this, intent)
-        startBtn.isEnabled = false
         stopBtn.isEnabled = true
         // Lower original audio of other apps per chosen ratio
         setOtherAppsVolume(1f - pct / 100f)

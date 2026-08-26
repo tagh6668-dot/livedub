@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.*
+import android.media.projection.MediaProjection
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
@@ -28,6 +29,12 @@ class DubService : Service() {
         const val CHANNEL_ID = "livedub_channel"
         var isRunning = false
         var instance: DubService? = null
+
+        /**
+         * MediaProjection token set by MainActivity BEFORE starting the service.
+         * Consumed once in startAudioPipeline(), then nulled.
+         */
+        var pendingProjection: MediaProjection? = null
     }
 
     private val running = AtomicBoolean(false)
@@ -35,6 +42,7 @@ class DubService : Service() {
     private var captureThread: Thread? = null
     private var ws: WebSocketClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var mediaProjection: MediaProjection? = null
 
     // Volume ratio: dub volume relative to original (0.0 - 1.0 multiplier applied to dub)
     @Volatile var dubVolumeRatio: Float = 0.8f
@@ -45,6 +53,15 @@ class DubService : Service() {
         val apiKey = intent?.getStringExtra("api_key") ?: return START_NOT_STICKY
         dubVolumeRatio = intent.getFloatExtra("dub_volume", 0.8f)
         if (!running.get()) {
+            // Consume the MediaProjection token set by MainActivity
+            mediaProjection = pendingProjection
+            pendingProjection = null
+            if (mediaProjection == null) {
+                log("ERROR: no MediaProjection token — cannot capture audio")
+                setStatus("خطا: دسترسی ضبط صفحه داده نشد")
+                stopSelf()
+                return START_NOT_STICKY
+            }
             startForegroundWithNotification()
             running.set(true)
             isRunning = true
@@ -198,43 +215,59 @@ class DubService : Service() {
             track.stop(); track.release()
         }.also { it.start() }
 
-        // ---- Capture: INTERNAL device audio ONLY (no mic fallback) ----
-        val inMinBuf = AudioRecord.getMinBufferSize(
-            16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
-        )
-        if (!useInternalAudio()) {
-            LogBuffer.append(TAG, "capture ABORT: app is not privileged (CAPTURE_AUDIO_OUTPUT missing)")
-            setStatus("صدا داخلی فعال نیست — دسترسی روت داده شد؟ یکبار ریبوت لازم است")
+        // ---- Capture: AudioPlaybackCapture via MediaProjection ----
+        // Unlike REMOTE_SUBMIX, AudioPlaybackCapture captures a COPY of the
+        // audio stream from other apps while letting it continue playing
+        // through the speakers — the user hears the original audio normally.
+        val projection = mediaProjection
+        if (projection == null) {
+            log("capture ABORT: MediaProjection is null")
+            setStatus("خطا: دسترسی ضبط صفحه از دست رفت")
             cleanup()
             stopSelf()
             return
         }
-        val source = MediaRecorder.AudioSource.REMOTE_SUBMIX
-        log("capture source=REMOTE_SUBMIX (internal)")
+
+        val captureConfig = AudioPlaybackCaptureConfiguration.Builder(projection)
+            .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
+            .addMatchingUsage(AudioAttributes.USAGE_GAME)
+            .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+            .build()
+
+        val inMinBuf = AudioRecord.getMinBufferSize(
+            16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT
+        )
+
         val audioRecord = try {
-            AudioRecord(
-                source,
-                16000,
-                AudioFormat.CHANNEL_IN_MONO,
-                AudioFormat.ENCODING_PCM_16BIT,
-                maxOf(inMinBuf, 16000 * 2)
-            ).also { rec ->
-                if (rec.state != AudioRecord.STATE_INITIALIZED) {
-                    throw IllegalStateException("init failed for REMOTE_SUBMIX")
+            AudioRecord.Builder()
+                .setAudioPlaybackCaptureConfig(captureConfig)
+                .setAudioFormat(
+                    AudioFormat.Builder()
+                        .setSampleRate(16000)
+                        .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+                        .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+                        .build()
+                )
+                .setBufferSizeInBytes(maxOf(inMinBuf, 16000 * 2))
+                .build()
+                .also { rec ->
+                    if (rec.state != AudioRecord.STATE_INITIALIZED) {
+                        throw IllegalStateException("AudioPlaybackCapture init failed")
+                    }
+                    log("AudioRecord (PlaybackCapture) initialized ok, buffer=${maxOf(inMinBuf, 16000 * 2)} bytes")
                 }
-                log("AudioRecord initialized ok, buffer=${maxOf(inMinBuf, 16000 * 2)} bytes")
-            }
         } catch (e: Exception) {
-            log("REMOTE_SUBMIX init FAILED: ${e.message}")
-            setStatus("شروع ضبط داخلی ممکن نشد: ${e.message}")
+            log("AudioPlaybackCapture init FAILED: ${e.message}")
+            setStatus("شروع ضبط ممکن نشد: ${e.message}")
             stopSelf()
             return
         }
+
         val buf = ByteArray(3200) // 100ms of 16kHz 16-bit mono
         captureThread = Thread {
             try {
                 audioRecord.startRecording()
-                log("capture thread running, recording=${audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING}")
+                log("capture thread running (PlaybackCapture), recording=${audioRecord.recordingState == AudioRecord.RECORDSTATE_RECORDING}")
             } catch (e: Exception) {
                 log("startRecording failed: ${e.message}")
                 return@Thread
@@ -287,14 +320,6 @@ class DubService : Service() {
 
     private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<ByteArray>()
 
-    private fun useInternalAudio(): Boolean {
-        val privileged = RootActivator.isPrivileged(this)
-        log("privilege check: FLAG_SYSTEM=${(applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_SYSTEM) != 0}, " +
-            "CAPTURE_AUDIO_OUTPUT granted=${checkSelfPermission("android.permission.CAPTURE_AUDIO_OUTPUT") == PackageManager.PERMISSION_GRANTED}, " +
-            "isPrivileged=$privileged")
-        return privileged
-    }
-
     private fun enqueuePlayback(pcm: ByteArray) {
         playbackQueue.add(pcm)
     }
@@ -322,6 +347,7 @@ class DubService : Service() {
     private fun cleanup() {
         running.set(false)
         try { ws?.close() } catch (_: Exception) {}
+        try { mediaProjection?.stop() } catch (_: Exception) {}
     }
 
     override fun onDestroy() {
@@ -329,6 +355,7 @@ class DubService : Service() {
         isRunning = false
         instance = null
         try { ws?.close() } catch (_: Exception) {}
+        try { mediaProjection?.stop() } catch (_: Exception) {}
         super.onDestroy()
     }
 }
