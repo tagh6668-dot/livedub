@@ -109,7 +109,17 @@ class DubService : Service() {
                     try { handleServerMessage(JSONObject(it)) } catch (e: Exception) { log("parse err: ${e.message}") }
                 }
             }
-            override fun onMessage(bytes: ByteBuffer?) {}
+            override fun onMessage(bytes: ByteBuffer?) {
+                bytes?.let {
+                    val text = String(it.array(), it.position(), it.remaining(), Charsets.UTF_8)
+                    if (text.length < 1200) {
+                        log("<< (bin) $text")
+                    } else {
+                        log("<< (bin ${text.length} chars) ${text.take(300)}…")
+                    }
+                    try { handleServerMessage(JSONObject(text)) } catch (e: Exception) { log("parse err (bin): ${e.message}") }
+                }
+            }
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
                 log("WS closed code=$code reason=$reason remote=$remote")
                 setStatus("قطع شد: ${reason ?: code}")
