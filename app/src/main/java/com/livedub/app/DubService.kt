@@ -133,8 +133,7 @@ class DubService : Service() {
             .put(
                 "translationConfig",
                 JSONObject()
-                    .put("targetLanguageCode", "fa")
-                    .put("echoTargetLanguage", true)
+                    .put("target_language_code", "fa")
             )
         val setupInner = JSONObject()
             .put("model", "models/gemini-3.5-live-translate-preview")
