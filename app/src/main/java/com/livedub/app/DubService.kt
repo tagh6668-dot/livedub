@@ -249,6 +249,7 @@ class DubService : Service() {
             .addMatchingUsage(AudioAttributes.USAGE_MEDIA)
             .addMatchingUsage(AudioAttributes.USAGE_GAME)
             .addMatchingUsage(AudioAttributes.USAGE_UNKNOWN)
+            .excludeUid(android.os.Process.myUid())
             .build()
 
         val inMinBuf = AudioRecord.getMinBufferSize(
