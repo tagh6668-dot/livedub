@@ -1,0 +1,25 @@
+{
+  "projectRoot": "/data/data/com.termux/files/home/LiveDub",
+  "files": [
+    {"path": ".github/workflows/build.yml", "language": "yaml", "fileCategory": "infra"},
+    {"path": "README.md", "language": "markdown", "fileCategory": "docs"},
+    {"path": "app/build.gradle.kts", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/debug.keystore", "language": "keystore", "fileCategory": "code"},
+    {"path": "app/src/main/AndroidManifest.xml", "language": "xml", "fileCategory": "config"},
+    {"path": "app/src/main/java/com/livedub/app/DubService.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/java/com/livedub/app/LiveDubApp.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/java/com/livedub/app/LogBuffer.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/java/com/livedub/app/MainActivity.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/java/com/livedub/app/RootActivator.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/java/com/livedub/app/RootVolumeHelper.kt", "language": "kotlin", "fileCategory": "code"},
+    {"path": "app/src/main/res/layout/activity_main.xml", "language": "xml", "fileCategory": "config"},
+    {"path": "app/src/main/res/values/strings.xml", "language": "xml", "fileCategory": "config"},
+    {"path": "app/src/main/res/values/themes.xml", "language": "xml", "fileCategory": "config"},
+    {"path": "build.gradle.kts", "language": "kotlin", "fileCategory": "code"},
+    {"path": "gradle.properties", "language": "properties", "fileCategory": "config"},
+    {"path": "gradle/wrapper/gradle-wrapper.jar", "language": "jar", "fileCategory": "code"},
+    {"path": "gradle/wrapper/gradle-wrapper.properties", "language": "properties", "fileCategory": "config"},
+    {"path": "gradlew", "language": "unknown", "fileCategory": "code"},
+    {"path": "settings.gradle.kts", "language": "kotlin", "fileCategory": "code"}
+  ]
+}

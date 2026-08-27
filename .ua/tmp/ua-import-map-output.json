@@ -1,0 +1,30 @@
+{
+  "scriptCompleted": true,
+  "stats": {
+    "filesScanned": 20,
+    "filesWithImports": 0,
+    "totalEdges": 0
+  },
+  "importMap": {
+    ".github/workflows/build.yml": [],
+    "README.md": [],
+    "app/build.gradle.kts": [],
+    "app/debug.keystore": [],
+    "app/src/main/AndroidManifest.xml": [],
+    "app/src/main/java/com/livedub/app/DubService.kt": [],
+    "app/src/main/java/com/livedub/app/LiveDubApp.kt": [],
+    "app/src/main/java/com/livedub/app/LogBuffer.kt": [],
+    "app/src/main/java/com/livedub/app/MainActivity.kt": [],
+    "app/src/main/java/com/livedub/app/RootActivator.kt": [],
+    "app/src/main/java/com/livedub/app/RootVolumeHelper.kt": [],
+    "app/src/main/res/layout/activity_main.xml": [],
+    "app/src/main/res/values/strings.xml": [],
+    "app/src/main/res/values/themes.xml": [],
+    "build.gradle.kts": [],
+    "gradle.properties": [],
+    "gradle/wrapper/gradle-wrapper.jar": [],
+    "gradle/wrapper/gradle-wrapper.properties": [],
+    "gradlew": [],
+    "settings.gradle.kts": []
+  }
+}

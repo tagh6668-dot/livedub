@@ -1,0 +1,9 @@
+{
+  "projectRoot": "/data/data/com.termux/files/home/LiveDub",
+  "batchFiles": [
+    {"path": ".github/workflows/build.yml", "language": "yaml", "sizeLines": 33, "fileCategory": "infra"}
+  ],
+  "batchImportData": {
+    ".github/workflows/build.yml": []
+  }
+}

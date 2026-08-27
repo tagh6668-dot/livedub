@@ -100,8 +100,12 @@ class DubService : Service() {
             }
             override fun onMessage(message: String?) {
                 message?.let {
-                    // Log raw server messages (truncated) except bulky audio
-                    if (it.length < 600) log("<< $it")
+                    // Log all server messages; truncate very long ones (audio payloads)
+                    if (it.length < 1200) {
+                        log("<< $it")
+                    } else {
+                        log("<< (${it.length} chars) ${it.take(300)}…")
+                    }
                     try { handleServerMessage(JSONObject(it)) } catch (e: Exception) { log("parse err: ${e.message}") }
                 }
             }
@@ -139,14 +143,18 @@ class DubService : Service() {
             .put("outputAudioTranscription", JSONObject())
         val setup = JSONObject().put("setup", setupInner)
         log(">> setup sent (target=fa)")
+        log(">> setup JSON: ${setup.toString()}")
         ws?.send(setup.toString())
-        setStatus("متصل — در حال شروع دوبله…")
-        startAudioPipeline()
+        setStatus("متصل — منتظر تأیید سرور…")
+        // NOTE: Do NOT start audio pipeline here!
+        // We MUST wait for "setupComplete" from the server before sending any audio.
     }
 
     private fun handleServerMessage(msg: JSONObject) {
         if (msg.has("setupComplete")) {
-            setStatus("جلسه آماده است")
+            log("setupComplete received — starting audio pipeline")
+            setStatus("جلسه آماده — شروع ضبط صدا…")
+            startAudioPipeline()
             return
         }
         val content = msg.optJSONObject("serverContent") ?: return

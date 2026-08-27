@@ -1,0 +1,2780 @@
+{
+  "scriptCompleted": true,
+  "filesAnalyzed": 10,
+  "filesSkipped": [
+    "app/debug.keystore",
+    "app/src/main/AndroidManifest.xml",
+    "app/src/main/res/layout/activity_main.xml",
+    "app/src/main/res/values/strings.xml",
+    "app/src/main/res/values/themes.xml",
+    "gradle.properties",
+    "gradle/wrapper/gradle-wrapper.jar",
+    "gradle/wrapper/gradle-wrapper.properties",
+    "gradlew"
+  ],
+  "analysisOutcomes": {
+    "structure": {
+      "succeeded": 10,
+      "failed": 0
+    },
+    "callGraph": {
+      "succeeded": 9,
+      "failed": 0,
+      "skipped": 1
+    }
+  },
+  "results": [
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "fileCategory": "docs",
+      "totalLines": 21,
+      "nonEmptyLines": 17,
+      "sections": [
+        {
+          "heading": "LiveDub — دوبله زنده فارسی",
+          "level": 1,
+          "line": 1
+        },
+        {
+          "heading": "قابلیت‌ها",
+          "level": 2,
+          "line": 6
+        },
+        {
+          "heading": "نحوه کار",
+          "level": 2,
+          "line": 15
+        },
+        {
+          "heading": "ساخت",
+          "level": 2,
+          "line": 20
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0,
+        "sectionCount": 4
+      }
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 52,
+      "nonEmptyLines": 47,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/DubService.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 361,
+      "nonEmptyLines": 333,
+      "functions": [
+        {
+          "name": "onBind",
+          "startLine": 50,
+          "endLine": 50,
+          "params": [
+            "intent"
+          ]
+        },
+        {
+          "name": "onStartCommand",
+          "startLine": 52,
+          "endLine": 72,
+          "params": [
+            "intent",
+            "flags",
+            "startId"
+          ]
+        },
+        {
+          "name": "startForegroundWithNotification",
+          "startLine": 74,
+          "endLine": 92,
+          "params": []
+        },
+        {
+          "name": "connectWebSocket",
+          "startLine": 94,
+          "endLine": 120,
+          "params": [
+            "apiKey"
+          ]
+        },
+        {
+          "name": "sendSetupMessage",
+          "startLine": 122,
+          "endLine": 145,
+          "params": []
+        },
+        {
+          "name": "handleServerMessage",
+          "startLine": 147,
+          "endLine": 178,
+          "params": [
+            "msg"
+          ]
+        },
+        {
+          "name": "startAudioPipeline",
+          "startLine": 182,
+          "endLine": 306,
+          "params": []
+        },
+        {
+          "name": "rms",
+          "startLine": 309,
+          "endLine": 319,
+          "params": [
+            "buf",
+            "len"
+          ]
+        },
+        {
+          "name": "enqueuePlayback",
+          "startLine": 323,
+          "endLine": 325,
+          "params": [
+            "pcm"
+          ]
+        },
+        {
+          "name": "applyGain",
+          "startLine": 327,
+          "endLine": 335,
+          "params": [
+            "samples",
+            "gain"
+          ]
+        },
+        {
+          "name": "setStatus",
+          "startLine": 337,
+          "endLine": 340,
+          "params": [
+            "s"
+          ]
+        },
+        {
+          "name": "log",
+          "startLine": 342,
+          "endLine": 345,
+          "params": [
+            "m"
+          ]
+        },
+        {
+          "name": "cleanup",
+          "startLine": 347,
+          "endLine": 351,
+          "params": []
+        },
+        {
+          "name": "onDestroy",
+          "startLine": 353,
+          "endLine": 360,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "DubService",
+          "startLine": 25,
+          "endLine": 361,
+          "methods": [
+            "onBind",
+            "onStartCommand",
+            "startForegroundWithNotification",
+            "connectWebSocket",
+            "sendSetupMessage",
+            "handleServerMessage",
+            "startAudioPipeline",
+            "rms",
+            "enqueuePlayback",
+            "applyGain",
+            "setStatus",
+            "log",
+            "cleanup",
+            "onDestroy"
+          ],
+          "properties": [
+            "running",
+            "playbackThread",
+            "captureThread",
+            "ws",
+            "mainHandler",
+            "mediaProjection",
+            "dubVolumeRatio",
+            "audioChunksReceived",
+            "playbackQueue"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "dubVolumeRatio",
+          "line": 48,
+          "isDefault": false
+        },
+        {
+          "name": "onBind",
+          "line": 50,
+          "isDefault": false
+        },
+        {
+          "name": "onStartCommand",
+          "line": 52,
+          "isDefault": false
+        },
+        {
+          "name": "onDestroy",
+          "line": 353,
+          "isDefault": false
+        },
+        {
+          "name": "DubService",
+          "line": 25,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "onStartCommand",
+          "callee": "getStringExtra",
+          "lineNumber": 53
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "getFloatExtra",
+          "lineNumber": 54
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "get",
+          "lineNumber": 55
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "log",
+          "lineNumber": 60
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "setStatus",
+          "lineNumber": 61
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "stopSelf",
+          "lineNumber": 62
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "startForegroundWithNotification",
+          "lineNumber": 65
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "set",
+          "lineNumber": 66
+        },
+        {
+          "caller": "onStartCommand",
+          "callee": "connectWebSocket",
+          "lineNumber": 69
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "getSystemService",
+          "lineNumber": 75
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "NotificationChannel",
+          "lineNumber": 77
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "createNotificationChannel",
+          "lineNumber": 78
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "build",
+          "lineNumber": 80
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "setSmallIcon",
+          "lineNumber": 80
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "setContentText",
+          "lineNumber": 80
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "setContentTitle",
+          "lineNumber": 80
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "Builder",
+          "lineNumber": 80
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "startForeground",
+          "lineNumber": 86
+        },
+        {
+          "caller": "startForegroundWithNotification",
+          "callee": "startForeground",
+          "lineNumber": 90
+        },
+        {
+          "caller": "connectWebSocket",
+          "callee": "URI",
+          "lineNumber": 95
+        },
+        {
+          "caller": "onOpen",
+          "callee": "log",
+          "lineNumber": 98
+        },
+        {
+          "caller": "onOpen",
+          "callee": "sendSetupMessage",
+          "lineNumber": 99
+        },
+        {
+          "caller": "onMessage",
+          "callee": "let",
+          "lineNumber": 102
+        },
+        {
+          "caller": "onMessage",
+          "callee": "log",
+          "lineNumber": 104
+        },
+        {
+          "caller": "onMessage",
+          "callee": "handleServerMessage",
+          "lineNumber": 105
+        },
+        {
+          "caller": "onMessage",
+          "callee": "JSONObject",
+          "lineNumber": 105
+        },
+        {
+          "caller": "onMessage",
+          "callee": "log",
+          "lineNumber": 105
+        },
+        {
+          "caller": "onClose",
+          "callee": "log",
+          "lineNumber": 110
+        },
+        {
+          "caller": "onClose",
+          "callee": "setStatus",
+          "lineNumber": 111
+        },
+        {
+          "caller": "onClose",
+          "callee": "stopSelf",
+          "lineNumber": 112
+        },
+        {
+          "caller": "onError",
+          "callee": "log",
+          "lineNumber": 115
+        },
+        {
+          "caller": "onError",
+          "callee": "setStatus",
+          "lineNumber": 116
+        },
+        {
+          "caller": "connectWebSocket",
+          "callee": "connect",
+          "lineNumber": 119
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 127
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 127
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 127
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 128
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONArray",
+          "lineNumber": 128
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 131
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 131
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 131
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 135
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 135
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 135
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 135
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 135
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 138
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 139
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "put",
+          "lineNumber": 140
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "JSONObject",
+          "lineNumber": 140
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "log",
+          "lineNumber": 141
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "send",
+          "lineNumber": 142
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "toString",
+          "lineNumber": 142
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "setStatus",
+          "lineNumber": 143
+        },
+        {
+          "caller": "sendSetupMessage",
+          "callee": "startAudioPipeline",
+          "lineNumber": 144
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "has",
+          "lineNumber": 148
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "setStatus",
+          "lineNumber": 149
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 152
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "let",
+          "lineNumber": 153
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optString",
+          "lineNumber": 153
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 153
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "isNotBlank",
+          "lineNumber": 154
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "setStatus",
+          "lineNumber": 154
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "let",
+          "lineNumber": 156
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optString",
+          "lineNumber": 156
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 156
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "isNotBlank",
+          "lineNumber": 157
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "setStatus",
+          "lineNumber": 157
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 159
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONArray",
+          "lineNumber": 161
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "length",
+          "lineNumber": 162
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 163
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optJSONObject",
+          "lineNumber": 163
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optString",
+          "lineNumber": 164
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "isNotEmpty",
+          "lineNumber": 165
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "decode",
+          "lineNumber": 166
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "log",
+          "lineNumber": 169
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "enqueuePlayback",
+          "lineNumber": 171
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "has",
+          "lineNumber": 175
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "optBoolean",
+          "lineNumber": 175
+        },
+        {
+          "caller": "handleServerMessage",
+          "callee": "log",
+          "lineNumber": 176
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "getMinBufferSize",
+          "lineNumber": 185
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setTransferMode",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setBufferSizeInBytes",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setAudioFormat",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setAudioAttributes",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 188
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 190
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setContentType",
+          "lineNumber": 190
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setUsage",
+          "lineNumber": 190
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 190
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setChannelMask",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setEncoding",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setSampleRate",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "maxOf",
+          "lineNumber": 199
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "play",
+          "lineNumber": 202
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "also",
+          "lineNumber": 204
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Thread",
+          "lineNumber": 204
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "get",
+          "lineNumber": 205
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "poll",
+          "lineNumber": 206
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "sleep",
+          "lineNumber": 208
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "applyGain",
+          "lineNumber": 212
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "write",
+          "lineNumber": 213
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "stop",
+          "lineNumber": 215
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "release",
+          "lineNumber": 215
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "start",
+          "lineNumber": 216
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 224
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setStatus",
+          "lineNumber": 225
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "cleanup",
+          "lineNumber": 226
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "stopSelf",
+          "lineNumber": 227
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 231
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "addMatchingUsage",
+          "lineNumber": 231
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "addMatchingUsage",
+          "lineNumber": 231
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "addMatchingUsage",
+          "lineNumber": 231
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 231
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "getMinBufferSize",
+          "lineNumber": 237
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "also",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setBufferSizeInBytes",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setAudioFormat",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setAudioPlaybackCaptureConfig",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 242
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "build",
+          "lineNumber": 245
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setChannelMask",
+          "lineNumber": 245
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setEncoding",
+          "lineNumber": 245
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setSampleRate",
+          "lineNumber": 245
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Builder",
+          "lineNumber": 245
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "maxOf",
+          "lineNumber": 251
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "IllegalStateException",
+          "lineNumber": 255
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 257
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "maxOf",
+          "lineNumber": 257
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 260
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "setStatus",
+          "lineNumber": 261
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "stopSelf",
+          "lineNumber": 262
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "ByteArray",
+          "lineNumber": 266
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "also",
+          "lineNumber": 267
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "Thread",
+          "lineNumber": 267
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "startRecording",
+          "lineNumber": 269
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 270
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 272
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "get",
+          "lineNumber": 277
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "read",
+          "lineNumber": 278
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "rms",
+          "lineNumber": 283
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 284
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 288
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "encodeToString",
+          "lineNumber": 290
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "copyOf",
+          "lineNumber": 290
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "put",
+          "lineNumber": 291
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "JSONObject",
+          "lineNumber": 291
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "put",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "JSONObject",
+          "lineNumber": 293
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "put",
+          "lineNumber": 295
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "put",
+          "lineNumber": 295
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "JSONObject",
+          "lineNumber": 295
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "send",
+          "lineNumber": 298
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "toString",
+          "lineNumber": 298
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 298
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 300
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "log",
+          "lineNumber": 303
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "stop",
+          "lineNumber": 304
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "release",
+          "lineNumber": 304
+        },
+        {
+          "caller": "startAudioPipeline",
+          "callee": "start",
+          "lineNumber": 305
+        },
+        {
+          "caller": "rms",
+          "callee": "toInt",
+          "lineNumber": 313
+        },
+        {
+          "caller": "rms",
+          "callee": "toInt",
+          "lineNumber": 313
+        },
+        {
+          "caller": "rms",
+          "callee": "toLong",
+          "lineNumber": 314
+        },
+        {
+          "caller": "rms",
+          "callee": "toInt",
+          "lineNumber": 318
+        },
+        {
+          "caller": "rms",
+          "callee": "sqrt",
+          "lineNumber": 318
+        },
+        {
+          "caller": "rms",
+          "callee": "toDouble",
+          "lineNumber": 318
+        },
+        {
+          "caller": "enqueuePlayback",
+          "callee": "add",
+          "lineNumber": 324
+        },
+        {
+          "caller": "applyGain",
+          "callee": "order",
+          "lineNumber": 329
+        },
+        {
+          "caller": "applyGain",
+          "callee": "wrap",
+          "lineNumber": 329
+        },
+        {
+          "caller": "applyGain",
+          "callee": "toInt",
+          "lineNumber": 331
+        },
+        {
+          "caller": "applyGain",
+          "callee": "getShort",
+          "lineNumber": 331
+        },
+        {
+          "caller": "applyGain",
+          "callee": "coerceIn",
+          "lineNumber": 332
+        },
+        {
+          "caller": "applyGain",
+          "callee": "toInt",
+          "lineNumber": 332
+        },
+        {
+          "caller": "applyGain",
+          "callee": "toInt",
+          "lineNumber": 332
+        },
+        {
+          "caller": "applyGain",
+          "callee": "toInt",
+          "lineNumber": 332
+        },
+        {
+          "caller": "applyGain",
+          "callee": "putShort",
+          "lineNumber": 333
+        },
+        {
+          "caller": "applyGain",
+          "callee": "toShort",
+          "lineNumber": 333
+        },
+        {
+          "caller": "setStatus",
+          "callee": "append",
+          "lineNumber": 338
+        },
+        {
+          "caller": "setStatus",
+          "callee": "post",
+          "lineNumber": 339
+        },
+        {
+          "caller": "setStatus",
+          "callee": "updateStatusStatic",
+          "lineNumber": 339
+        },
+        {
+          "caller": "log",
+          "callee": "i",
+          "lineNumber": 343
+        },
+        {
+          "caller": "log",
+          "callee": "append",
+          "lineNumber": 344
+        },
+        {
+          "caller": "cleanup",
+          "callee": "set",
+          "lineNumber": 348
+        },
+        {
+          "caller": "cleanup",
+          "callee": "close",
+          "lineNumber": 349
+        },
+        {
+          "caller": "cleanup",
+          "callee": "stop",
+          "lineNumber": 350
+        },
+        {
+          "caller": "onDestroy",
+          "callee": "set",
+          "lineNumber": 354
+        },
+        {
+          "caller": "onDestroy",
+          "callee": "close",
+          "lineNumber": 357
+        },
+        {
+          "caller": "onDestroy",
+          "callee": "stop",
+          "lineNumber": 358
+        },
+        {
+          "caller": "onDestroy",
+          "callee": "onDestroy",
+          "lineNumber": 359
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 14,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/LiveDubApp.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 22,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "onCreate",
+          "startLine": 6,
+          "endLine": 21,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "LiveDubApp",
+          "startLine": 5,
+          "endLine": 22,
+          "methods": [
+            "onCreate"
+          ],
+          "properties": []
+        }
+      ],
+      "exports": [
+        {
+          "name": "onCreate",
+          "line": 6,
+          "isDefault": false
+        },
+        {
+          "name": "LiveDubApp",
+          "line": 5,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "onCreate",
+          "callee": "onCreate",
+          "lineNumber": 7
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getDefaultUncaughtExceptionHandler",
+          "lineNumber": 8
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setDefaultUncaughtExceptionHandler",
+          "lineNumber": 9
+        },
+        {
+          "caller": "onCreate",
+          "callee": "StringWriter",
+          "lineNumber": 11
+        },
+        {
+          "caller": "onCreate",
+          "callee": "printStackTrace",
+          "lineNumber": 12
+        },
+        {
+          "caller": "onCreate",
+          "callee": "PrintWriter",
+          "lineNumber": 12
+        },
+        {
+          "caller": "onCreate",
+          "callee": "toString",
+          "lineNumber": 13
+        },
+        {
+          "caller": "onCreate",
+          "callee": "append",
+          "lineNumber": 14
+        },
+        {
+          "caller": "onCreate",
+          "callee": "take",
+          "lineNumber": 14
+        },
+        {
+          "caller": "onCreate",
+          "callee": "File",
+          "lineNumber": 16
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getExternalFilesDir",
+          "lineNumber": 16
+        },
+        {
+          "caller": "onCreate",
+          "callee": "writeText",
+          "lineNumber": 17
+        },
+        {
+          "caller": "onCreate",
+          "callee": "format",
+          "lineNumber": 17
+        },
+        {
+          "caller": "onCreate",
+          "callee": "SimpleDateFormat",
+          "lineNumber": 17
+        },
+        {
+          "caller": "onCreate",
+          "callee": "Date",
+          "lineNumber": 17
+        },
+        {
+          "caller": "onCreate",
+          "callee": "uncaughtException",
+          "lineNumber": 19
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 2,
+        "functionCount": 1,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/LogBuffer.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 24,
+      "nonEmptyLines": 20,
+      "functions": [
+        {
+          "name": "append",
+          "startLine": 11,
+          "endLine": 17,
+          "params": [
+            "tag",
+            "message"
+          ]
+        },
+        {
+          "name": "dump",
+          "startLine": 19,
+          "endLine": 20,
+          "params": []
+        },
+        {
+          "name": "clear",
+          "startLine": 22,
+          "endLine": 23,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "LogBuffer",
+          "startLine": 7,
+          "endLine": 24,
+          "methods": [
+            "append",
+            "dump",
+            "clear"
+          ],
+          "properties": [
+            "MAX_LINES",
+            "lines"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "append",
+          "line": 11,
+          "isDefault": false
+        },
+        {
+          "name": "dump",
+          "line": 19,
+          "isDefault": false
+        },
+        {
+          "name": "clear",
+          "line": 22,
+          "isDefault": false
+        },
+        {
+          "name": "LogBuffer",
+          "line": 7,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "append",
+          "callee": "format",
+          "lineNumber": 13
+        },
+        {
+          "caller": "append",
+          "callee": "SimpleDateFormat",
+          "lineNumber": 13
+        },
+        {
+          "caller": "append",
+          "callee": "Date",
+          "lineNumber": 14
+        },
+        {
+          "caller": "append",
+          "callee": "addLast",
+          "lineNumber": 15
+        },
+        {
+          "caller": "append",
+          "callee": "removeFirst",
+          "lineNumber": 16
+        },
+        {
+          "caller": "dump",
+          "callee": "joinToString",
+          "lineNumber": 20
+        },
+        {
+          "caller": "clear",
+          "callee": "clear",
+          "lineNumber": 23
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/MainActivity.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 255,
+      "nonEmptyLines": 227,
+      "functions": [
+        {
+          "name": "onCreate",
+          "startLine": 46,
+          "endLine": 149,
+          "params": [
+            "savedInstanceState"
+          ]
+        },
+        {
+          "name": "refreshLog",
+          "startLine": 158,
+          "endLine": 160,
+          "params": []
+        },
+        {
+          "name": "onResume",
+          "startLine": 162,
+          "endLine": 166,
+          "params": []
+        },
+        {
+          "name": "onPause",
+          "startLine": 168,
+          "endLine": 171,
+          "params": []
+        },
+        {
+          "name": "hasMicPermission",
+          "startLine": 173,
+          "endLine": 174,
+          "params": []
+        },
+        {
+          "name": "startDub",
+          "startLine": 180,
+          "endLine": 186,
+          "params": [
+            "apiKey"
+          ]
+        },
+        {
+          "name": "startDubService",
+          "startLine": 191,
+          "endLine": 201,
+          "params": [
+            "apiKey"
+          ]
+        },
+        {
+          "name": "stopDub",
+          "startLine": 203,
+          "endLine": 209,
+          "params": []
+        },
+        {
+          "name": "setOtherAppsVolume",
+          "startLine": 218,
+          "endLine": 239,
+          "params": [
+            "multiplier"
+          ]
+        },
+        {
+          "name": "onRequestPermissionsResult",
+          "startLine": 241,
+          "endLine": 249,
+          "params": [
+            "requestCode",
+            "permissions",
+            "grantResults"
+          ]
+        },
+        {
+          "name": "onDestroy",
+          "startLine": 251,
+          "endLine": 254,
+          "params": []
+        }
+      ],
+      "classes": [
+        {
+          "name": "MainActivity",
+          "startLine": 24,
+          "endLine": 255,
+          "methods": [
+            "onCreate",
+            "refreshLog",
+            "onResume",
+            "onPause",
+            "hasMicPermission",
+            "startDub",
+            "startDubService",
+            "stopDub",
+            "setOtherAppsVolume",
+            "onRequestPermissionsResult",
+            "onDestroy"
+          ],
+          "properties": [
+            "apiKeyInput",
+            "statusText",
+            "volumeLabel",
+            "startBtn",
+            "stopBtn",
+            "copyLogBtn",
+            "clearLogBtn",
+            "logText",
+            "volumeBar",
+            "prefs",
+            "mediaProjectionLauncher",
+            "pendingApiKey",
+            "logRefresher"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "onCreate",
+          "line": 46,
+          "isDefault": false
+        },
+        {
+          "name": "onResume",
+          "line": 162,
+          "isDefault": false
+        },
+        {
+          "name": "onPause",
+          "line": 168,
+          "isDefault": false
+        },
+        {
+          "name": "onRequestPermissionsResult",
+          "line": 241,
+          "isDefault": false
+        },
+        {
+          "name": "onDestroy",
+          "line": 251,
+          "isDefault": false
+        },
+        {
+          "name": "MainActivity",
+          "line": 24,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "updateStatusStatic",
+          "callee": "invoke",
+          "lineNumber": 28
+        },
+        {
+          "caller": "onCreate",
+          "callee": "onCreate",
+          "lineNumber": 47
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setContentView",
+          "lineNumber": 48
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 50
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 51
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 52
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 53
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 54
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 55
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 56
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 57
+        },
+        {
+          "caller": "onCreate",
+          "callee": "findViewById",
+          "lineNumber": 58
+        },
+        {
+          "caller": "onCreate",
+          "callee": "registerForActivityResult",
+          "lineNumber": 61
+        },
+        {
+          "caller": "onCreate",
+          "callee": "StartActivityForResult",
+          "lineNumber": 62
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getSystemService",
+          "lineNumber": 65
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getMediaProjection",
+          "lineNumber": 66
+        },
+        {
+          "caller": "onCreate",
+          "callee": "let",
+          "lineNumber": 68
+        },
+        {
+          "caller": "onCreate",
+          "callee": "startDubService",
+          "lineNumber": 68
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getBoolean",
+          "lineNumber": 77
+        },
+        {
+          "caller": "onCreate",
+          "callee": "start",
+          "lineNumber": 79
+        },
+        {
+          "caller": "onCreate",
+          "callee": "Thread",
+          "lineNumber": 79
+        },
+        {
+          "caller": "onCreate",
+          "callee": "activate",
+          "lineNumber": 80
+        },
+        {
+          "caller": "onCreate",
+          "callee": "runOnUiThread",
+          "lineNumber": 81
+        },
+        {
+          "caller": "onCreate",
+          "callee": "apply",
+          "lineNumber": 83
+        },
+        {
+          "caller": "onCreate",
+          "callee": "putBoolean",
+          "lineNumber": 83
+        },
+        {
+          "caller": "onCreate",
+          "callee": "edit",
+          "lineNumber": 83
+        },
+        {
+          "caller": "onCreate",
+          "callee": "append",
+          "lineNumber": 86
+        },
+        {
+          "caller": "onCreate",
+          "callee": "refreshLog",
+          "lineNumber": 89
+        },
+        {
+          "caller": "onCreate",
+          "callee": "isPrivileged",
+          "lineNumber": 92
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setText",
+          "lineNumber": 96
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getString",
+          "lineNumber": 96
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getInt",
+          "lineNumber": 97
+        },
+        {
+          "caller": "onCreate",
+          "callee": "runOnUiThread",
+          "lineNumber": 100
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setOnSeekBarChangeListener",
+          "lineNumber": 102
+        },
+        {
+          "caller": "onProgressChanged",
+          "callee": "let",
+          "lineNumber": 107
+        },
+        {
+          "caller": "onProgressChanged",
+          "callee": "setOtherAppsVolume",
+          "lineNumber": 109
+        },
+        {
+          "caller": "onStopTrackingTouch",
+          "callee": "apply",
+          "lineNumber": 114
+        },
+        {
+          "caller": "onStopTrackingTouch",
+          "callee": "putInt",
+          "lineNumber": 114
+        },
+        {
+          "caller": "onStopTrackingTouch",
+          "callee": "edit",
+          "lineNumber": 114
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setOnClickListener",
+          "lineNumber": 118
+        },
+        {
+          "caller": "onCreate",
+          "callee": "trim",
+          "lineNumber": 119
+        },
+        {
+          "caller": "onCreate",
+          "callee": "toString",
+          "lineNumber": 119
+        },
+        {
+          "caller": "onCreate",
+          "callee": "isEmpty",
+          "lineNumber": 120
+        },
+        {
+          "caller": "onCreate",
+          "callee": "show",
+          "lineNumber": 121
+        },
+        {
+          "caller": "onCreate",
+          "callee": "makeText",
+          "lineNumber": 121
+        },
+        {
+          "caller": "onCreate",
+          "callee": "apply",
+          "lineNumber": 124
+        },
+        {
+          "caller": "onCreate",
+          "callee": "putString",
+          "lineNumber": 124
+        },
+        {
+          "caller": "onCreate",
+          "callee": "edit",
+          "lineNumber": 124
+        },
+        {
+          "caller": "onCreate",
+          "callee": "requestPermissions",
+          "lineNumber": 126
+        },
+        {
+          "caller": "onCreate",
+          "callee": "arrayOf",
+          "lineNumber": 127
+        },
+        {
+          "caller": "onCreate",
+          "callee": "startDub",
+          "lineNumber": 131
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setOnClickListener",
+          "lineNumber": 134
+        },
+        {
+          "caller": "onCreate",
+          "callee": "stopDub",
+          "lineNumber": 134
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setOnClickListener",
+          "lineNumber": 136
+        },
+        {
+          "caller": "onCreate",
+          "callee": "getSystemService",
+          "lineNumber": 137
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setPrimaryClip",
+          "lineNumber": 138
+        },
+        {
+          "caller": "onCreate",
+          "callee": "newPlainText",
+          "lineNumber": 139
+        },
+        {
+          "caller": "onCreate",
+          "callee": "dump",
+          "lineNumber": 139
+        },
+        {
+          "caller": "onCreate",
+          "callee": "show",
+          "lineNumber": 141
+        },
+        {
+          "caller": "onCreate",
+          "callee": "makeText",
+          "lineNumber": 141
+        },
+        {
+          "caller": "onCreate",
+          "callee": "setOnClickListener",
+          "lineNumber": 144
+        },
+        {
+          "caller": "onCreate",
+          "callee": "clear",
+          "lineNumber": 145
+        },
+        {
+          "caller": "onCreate",
+          "callee": "refreshLog",
+          "lineNumber": 146
+        },
+        {
+          "caller": "onCreate",
+          "callee": "show",
+          "lineNumber": 147
+        },
+        {
+          "caller": "onCreate",
+          "callee": "makeText",
+          "lineNumber": 147
+        },
+        {
+          "caller": "run",
+          "callee": "refreshLog",
+          "lineNumber": 153
+        },
+        {
+          "caller": "run",
+          "callee": "postDelayed",
+          "lineNumber": 154
+        },
+        {
+          "caller": "refreshLog",
+          "callee": "ifEmpty",
+          "lineNumber": 159
+        },
+        {
+          "caller": "refreshLog",
+          "callee": "dump",
+          "lineNumber": 159
+        },
+        {
+          "caller": "onResume",
+          "callee": "onResume",
+          "lineNumber": 163
+        },
+        {
+          "caller": "onResume",
+          "callee": "refreshLog",
+          "lineNumber": 164
+        },
+        {
+          "caller": "onResume",
+          "callee": "post",
+          "lineNumber": 165
+        },
+        {
+          "caller": "onPause",
+          "callee": "removeCallbacks",
+          "lineNumber": 169
+        },
+        {
+          "caller": "onPause",
+          "callee": "onPause",
+          "lineNumber": 170
+        },
+        {
+          "caller": "hasMicPermission",
+          "callee": "checkSelfPermission",
+          "lineNumber": 174
+        },
+        {
+          "caller": "startDub",
+          "callee": "getSystemService",
+          "lineNumber": 184
+        },
+        {
+          "caller": "startDub",
+          "callee": "launch",
+          "lineNumber": 185
+        },
+        {
+          "caller": "startDub",
+          "callee": "createScreenCaptureIntent",
+          "lineNumber": 185
+        },
+        {
+          "caller": "startDubService",
+          "callee": "apply",
+          "lineNumber": 193
+        },
+        {
+          "caller": "startDubService",
+          "callee": "Intent",
+          "lineNumber": 193
+        },
+        {
+          "caller": "startDubService",
+          "callee": "putExtra",
+          "lineNumber": 194
+        },
+        {
+          "caller": "startDubService",
+          "callee": "putExtra",
+          "lineNumber": 195
+        },
+        {
+          "caller": "startDubService",
+          "callee": "startForegroundService",
+          "lineNumber": 197
+        },
+        {
+          "caller": "startDubService",
+          "callee": "setOtherAppsVolume",
+          "lineNumber": 200
+        },
+        {
+          "caller": "stopDub",
+          "callee": "stopService",
+          "lineNumber": 204
+        },
+        {
+          "caller": "stopDub",
+          "callee": "Intent",
+          "lineNumber": 204
+        },
+        {
+          "caller": "stopDub",
+          "callee": "setOtherAppsVolume",
+          "lineNumber": 207
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "start",
+          "lineNumber": 219
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "Thread",
+          "lineNumber": 219
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "getSystemService",
+          "lineNumber": 221
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "getDeclaredField",
+          "lineNumber": 228
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "getInt",
+          "lineNumber": 230
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "myPid",
+          "lineNumber": 232
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "setAppVolume",
+          "lineNumber": 233
+        },
+        {
+          "caller": "setOtherAppsVolume",
+          "callee": "w",
+          "lineNumber": 236
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "onRequestPermissionsResult",
+          "lineNumber": 244
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "firstOrNull",
+          "lineNumber": 245
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "trim",
+          "lineNumber": 246
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "toString",
+          "lineNumber": 246
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "isNotEmpty",
+          "lineNumber": 247
+        },
+        {
+          "caller": "onRequestPermissionsResult",
+          "callee": "startDub",
+          "lineNumber": 247
+        },
+        {
+          "caller": "onDestroy",
+          "callee": "onDestroy",
+          "lineNumber": 253
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 6,
+        "functionCount": 11,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/RootActivator.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 141,
+      "nonEmptyLines": 130,
+      "functions": [
+        {
+          "name": "hasRoot",
+          "startLine": 25,
+          "endLine": 34,
+          "params": []
+        },
+        {
+          "name": "isPrivileged",
+          "startLine": 37,
+          "endLine": 69,
+          "params": [
+            "context"
+          ]
+        },
+        {
+          "name": "activate",
+          "startLine": 71,
+          "endLine": 140,
+          "params": [
+            "context"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "RootActivator",
+          "startLine": 19,
+          "endLine": 141,
+          "methods": [
+            "hasRoot",
+            "isPrivileged",
+            "activate"
+          ],
+          "properties": [
+            "TAG"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "TAG",
+          "line": 21,
+          "isDefault": false
+        },
+        {
+          "name": "hasRoot",
+          "line": 25,
+          "isDefault": false
+        },
+        {
+          "name": "isPrivileged",
+          "line": 37,
+          "isDefault": false
+        },
+        {
+          "name": "activate",
+          "line": 71,
+          "isDefault": false
+        },
+        {
+          "name": "RootActivator",
+          "line": 19,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "hasRoot",
+          "callee": "start",
+          "lineNumber": 27
+        },
+        {
+          "caller": "hasRoot",
+          "callee": "ProcessBuilder",
+          "lineNumber": 27
+        },
+        {
+          "caller": "hasRoot",
+          "callee": "readText",
+          "lineNumber": 28
+        },
+        {
+          "caller": "hasRoot",
+          "callee": "bufferedReader",
+          "lineNumber": 28
+        },
+        {
+          "caller": "hasRoot",
+          "callee": "waitFor",
+          "lineNumber": 29
+        },
+        {
+          "caller": "hasRoot",
+          "callee": "contains",
+          "lineNumber": 30
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "getPackageInfo",
+          "lineNumber": 39
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "indexOf",
+          "lineNumber": 43
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "getPermissionInfo",
+          "lineNumber": 47
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "checkSelfPermission",
+          "lineNumber": 48
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "arrayOf",
+          "lineNumber": 53
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "start",
+          "lineNumber": 56
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "ProcessBuilder",
+          "lineNumber": 56
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "readText",
+          "lineNumber": 57
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "bufferedReader",
+          "lineNumber": 57
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "waitFor",
+          "lineNumber": 58
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "contains",
+          "lineNumber": 59
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "let",
+          "lineNumber": 59
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "exists",
+          "lineNumber": 59
+        },
+        {
+          "caller": "isPrivileged",
+          "callee": "File",
+          "lineNumber": 59
+        },
+        {
+          "caller": "activate",
+          "callee": "Result",
+          "lineNumber": 72
+        },
+        {
+          "caller": "activate",
+          "callee": "apply",
+          "lineNumber": 76
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 76
+        },
+        {
+          "caller": "activate",
+          "callee": "mkdirs",
+          "lineNumber": 76
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 79
+        },
+        {
+          "caller": "activate",
+          "callee": "mkdirs",
+          "lineNumber": 80
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 80
+        },
+        {
+          "caller": "activate",
+          "callee": "mkdirs",
+          "lineNumber": 81
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 81
+        },
+        {
+          "caller": "activate",
+          "callee": "mkdirs",
+          "lineNumber": 82
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 82
+        },
+        {
+          "caller": "activate",
+          "callee": "writeText",
+          "lineNumber": 85
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 85
+        },
+        {
+          "caller": "activate",
+          "callee": "trimIndent",
+          "lineNumber": 86
+        },
+        {
+          "caller": "activate",
+          "callee": "let",
+          "lineNumber": 96
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 96
+        },
+        {
+          "caller": "activate",
+          "callee": "mkdirs",
+          "lineNumber": 97
+        },
+        {
+          "caller": "activate",
+          "callee": "writeText",
+          "lineNumber": 98
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 101
+        },
+        {
+          "caller": "activate",
+          "callee": "use",
+          "lineNumber": 102
+        },
+        {
+          "caller": "activate",
+          "callee": "inputStream",
+          "lineNumber": 102
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 102
+        },
+        {
+          "caller": "activate",
+          "callee": "use",
+          "lineNumber": 103
+        },
+        {
+          "caller": "activate",
+          "callee": "outputStream",
+          "lineNumber": 103
+        },
+        {
+          "caller": "activate",
+          "callee": "copyTo",
+          "lineNumber": 103
+        },
+        {
+          "caller": "activate",
+          "callee": "writeText",
+          "lineNumber": 106
+        },
+        {
+          "caller": "activate",
+          "callee": "File",
+          "lineNumber": 106
+        },
+        {
+          "caller": "activate",
+          "callee": "trimIndent",
+          "lineNumber": 107
+        },
+        {
+          "caller": "activate",
+          "callee": "buildString",
+          "lineNumber": 119
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 120
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 121
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 122
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 123
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 124
+        },
+        {
+          "caller": "activate",
+          "callee": "append",
+          "lineNumber": 125
+        },
+        {
+          "caller": "activate",
+          "callee": "exec",
+          "lineNumber": 127
+        },
+        {
+          "caller": "activate",
+          "callee": "getRuntime",
+          "lineNumber": 127
+        },
+        {
+          "caller": "activate",
+          "callee": "arrayOf",
+          "lineNumber": 127
+        },
+        {
+          "caller": "activate",
+          "callee": "readText",
+          "lineNumber": 128
+        },
+        {
+          "caller": "activate",
+          "callee": "bufferedReader",
+          "lineNumber": 128
+        },
+        {
+          "caller": "activate",
+          "callee": "readText",
+          "lineNumber": 129
+        },
+        {
+          "caller": "activate",
+          "callee": "bufferedReader",
+          "lineNumber": 129
+        },
+        {
+          "caller": "activate",
+          "callee": "waitFor",
+          "lineNumber": 130
+        },
+        {
+          "caller": "activate",
+          "callee": "i",
+          "lineNumber": 131
+        },
+        {
+          "caller": "activate",
+          "callee": "contains",
+          "lineNumber": 132
+        },
+        {
+          "caller": "activate",
+          "callee": "Result",
+          "lineNumber": 133
+        },
+        {
+          "caller": "activate",
+          "callee": "Result",
+          "lineNumber": 135
+        },
+        {
+          "caller": "activate",
+          "callee": "take",
+          "lineNumber": 135
+        },
+        {
+          "caller": "activate",
+          "callee": "Result",
+          "lineNumber": 138
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 5,
+        "functionCount": 3,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/RootVolumeHelper.kt",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 57,
+      "nonEmptyLines": 51,
+      "functions": [
+        {
+          "name": "setAppVolume",
+          "startLine": 20,
+          "endLine": 37,
+          "params": [
+            "context",
+            "cfg",
+            "pid",
+            "volume"
+          ]
+        },
+        {
+          "name": "setMusicStreamVolume",
+          "startLine": 40,
+          "endLine": 49,
+          "params": [
+            "am",
+            "ratio"
+          ]
+        },
+        {
+          "name": "pidToPackage",
+          "startLine": 51,
+          "endLine": 56,
+          "params": [
+            "context",
+            "pid"
+          ]
+        }
+      ],
+      "classes": [
+        {
+          "name": "RootVolumeHelper",
+          "startLine": 16,
+          "endLine": 57,
+          "methods": [
+            "setAppVolume",
+            "setMusicStreamVolume",
+            "pidToPackage"
+          ],
+          "properties": [
+            "lastError"
+          ]
+        }
+      ],
+      "exports": [
+        {
+          "name": "lastError",
+          "line": 18,
+          "isDefault": false
+        },
+        {
+          "name": "setAppVolume",
+          "line": 20,
+          "isDefault": false
+        },
+        {
+          "name": "setMusicStreamVolume",
+          "line": 40,
+          "isDefault": false
+        },
+        {
+          "name": "RootVolumeHelper",
+          "line": 16,
+          "isDefault": false
+        }
+      ],
+      "callGraph": [
+        {
+          "caller": "setAppVolume",
+          "callee": "invoke",
+          "lineNumber": 22
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "getMethod",
+          "lineNumber": 22
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "invoke",
+          "lineNumber": 23
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "getMethod",
+          "lineNumber": 23
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "forName",
+          "lineNumber": 25
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "invoke",
+          "lineNumber": 26
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "getMethod",
+          "lineNumber": 26
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "first",
+          "lineNumber": 27
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "invoke",
+          "lineNumber": 28
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "coerceIn",
+          "lineNumber": 28
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "first",
+          "lineNumber": 32
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "invoke",
+          "lineNumber": 33
+        },
+        {
+          "caller": "setAppVolume",
+          "callee": "coerceIn",
+          "lineNumber": 33
+        },
+        {
+          "caller": "setMusicStreamVolume",
+          "callee": "getStreamMaxVolume",
+          "lineNumber": 42
+        },
+        {
+          "caller": "setMusicStreamVolume",
+          "callee": "getStreamVolume",
+          "lineNumber": 43
+        },
+        {
+          "caller": "setMusicStreamVolume",
+          "callee": "coerceIn",
+          "lineNumber": 44
+        },
+        {
+          "caller": "setMusicStreamVolume",
+          "callee": "toInt",
+          "lineNumber": 44
+        },
+        {
+          "caller": "setMusicStreamVolume",
+          "callee": "setStreamVolume",
+          "lineNumber": 45
+        },
+        {
+          "caller": "pidToPackage",
+          "callee": "getSystemService",
+          "lineNumber": 53
+        },
+        {
+          "caller": "pidToPackage",
+          "callee": "firstOrNull",
+          "lineNumber": 54
+        },
+        {
+          "caller": "pidToPackage",
+          "callee": "firstOrNull",
+          "lineNumber": 54
+        }
+      ],
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 4,
+        "functionCount": 3,
+        "classCount": 1
+      }
+    },
+    {
+      "path": "build.gradle.kts",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 4,
+      "nonEmptyLines": 4,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    },
+    {
+      "path": "settings.gradle.kts",
+      "language": "kotlin",
+      "fileCategory": "code",
+      "totalLines": 16,
+      "nonEmptyLines": 16,
+      "metrics": {
+        "importCount": 0,
+        "exportCount": 0,
+        "functionCount": 0,
+        "classCount": 0
+      }
+    }
+  ]
+}

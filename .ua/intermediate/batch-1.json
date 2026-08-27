@@ -1,0 +1,15 @@
+{
+  "nodes": [
+    {
+      "id": "pipeline:.github/workflows/build.yml",
+      "type": "pipeline",
+      "name": "build.yml",
+      "filePath": ".github/workflows/build.yml",
+      "summary": "GitHub Actions workflow that builds the debug APK on push to main/master branches and manual dispatch. Uses Gradle to compile the Android app and uploads the APK as an artifact.",
+      "tags": ["ci-cd", "deployment", "android", "gradle"],
+      "complexity": "moderate",
+      "languageNotes": "Standard Gradle-based Android build with JDK 17 and artifact upload."
+    }
+  ],
+  "edges": []
+}

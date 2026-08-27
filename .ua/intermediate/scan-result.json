@@ -1,0 +1,164 @@
+{
+  "name": "LiveDub",
+  "description": "Android app for live Persian dubbing of device audio using Gemini Live API (gemini-3.5-live-translate-preview). Captures internal audio via MediaProjection and AudioPlaybackCapture, translates to Persian in real-time, and plays back via AudioTrack with per-app volume control using hidden IPlayer.setVolume API on rooted MIUI.",
+  "languages": [
+    "kotlin",
+    "markdown",
+    "properties",
+    "xml",
+    "yaml"
+  ],
+  "frameworks": [
+    "Android",
+    "Gradle (Kotlin DSL)",
+    "GitHub Actions",
+    "Java-WebSocket"
+  ],
+  "files": [
+    {
+      "path": ".github/workflows/build.yml",
+      "language": "yaml",
+      "sizeLines": 33,
+      "fileCategory": "infra"
+    },
+    {
+      "path": "README.md",
+      "language": "markdown",
+      "sizeLines": 21,
+      "fileCategory": "docs"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "language": "kotlin",
+      "sizeLines": 52,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/debug.keystore",
+      "language": "keystore",
+      "sizeLines": 15,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "language": "xml",
+      "sizeLines": 32,
+      "fileCategory": "config"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/DubService.kt",
+      "language": "kotlin",
+      "sizeLines": 361,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/LiveDubApp.kt",
+      "language": "kotlin",
+      "sizeLines": 22,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/LogBuffer.kt",
+      "language": "kotlin",
+      "sizeLines": 24,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/MainActivity.kt",
+      "language": "kotlin",
+      "sizeLines": 255,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/RootActivator.kt",
+      "language": "kotlin",
+      "sizeLines": 141,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/java/com/livedub/app/RootVolumeHelper.kt",
+      "language": "kotlin",
+      "sizeLines": 57,
+      "fileCategory": "code"
+    },
+    {
+      "path": "app/src/main/res/layout/activity_main.xml",
+      "language": "xml",
+      "sizeLines": 103,
+      "fileCategory": "config"
+    },
+    {
+      "path": "app/src/main/res/values/strings.xml",
+      "language": "xml",
+      "sizeLines": 6,
+      "fileCategory": "config"
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "language": "xml",
+      "sizeLines": 11,
+      "fileCategory": "config"
+    },
+    {
+      "path": "build.gradle.kts",
+      "language": "kotlin",
+      "sizeLines": 4,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradle.properties",
+      "language": "properties",
+      "sizeLines": 4,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "language": "jar",
+      "sizeLines": 149,
+      "fileCategory": "code"
+    },
+    {
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "language": "properties",
+      "sizeLines": 5,
+      "fileCategory": "config"
+    },
+    {
+      "path": "gradlew",
+      "language": "unknown",
+      "sizeLines": 249,
+      "fileCategory": "code"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "language": "kotlin",
+      "sizeLines": 16,
+      "fileCategory": "code"
+    }
+  ],
+  "totalFiles": 20,
+  "filteredByIgnore": 0,
+  "estimatedComplexity": "small",
+  "importMap": {
+    ".github/workflows/build.yml": [],
+    "README.md": [],
+    "app/build.gradle.kts": [],
+    "app/debug.keystore": [],
+    "app/src/main/AndroidManifest.xml": [],
+    "app/src/main/java/com/livedub/app/DubService.kt": [],
+    "app/src/main/java/com/livedub/app/LiveDubApp.kt": [],
+    "app/src/main/java/com/livedub/app/LogBuffer.kt": [],
+    "app/src/main/java/com/livedub/app/MainActivity.kt": [],
+    "app/src/main/java/com/livedub/app/RootActivator.kt": [],
+    "app/src/main/java/com/livedub/app/RootVolumeHelper.kt": [],
+    "app/src/main/res/layout/activity_main.xml": [],
+    "app/src/main/res/values/strings.xml": [],
+    "app/src/main/res/values/themes.xml": [],
+    "build.gradle.kts": [],
+    "gradle.properties": [],
+    "gradle/wrapper/gradle-wrapper.jar": [],
+    "gradle/wrapper/gradle-wrapper.properties": [],
+    "gradlew": [],
+    "settings.gradle.kts": []
+  }
+}
