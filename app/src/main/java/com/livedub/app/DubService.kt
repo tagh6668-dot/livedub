@@ -42,8 +42,8 @@ class DubService : Service() {
 
         // Dub playback is UNTOUCHED by the uplink gate: when the original
         // source stops, the queued dub tail keeps playing at the SAME fixed
-        // volume. The gate exists only to stop the model from hearing the
-        // dub's own loopback and re-translating it (the loud-tail bug).
+        // volume. The gate only pauses the UPLINK (stop feeding the model
+        // once the source is gone) — it never touches playback gain.
     }
 
     private val running = AtomicBoolean(false)
@@ -498,9 +498,11 @@ class DubService : Service() {
             log("external player $reason: active=$was->$active (uid=$uid)")
             if (!active) {
                 // Original source paused/stopped/ended → close the UPLINK gate
-                // NOW (so the model can't hear the dub's own tail and echo it).
-                // Playback is NOT touched: the queued dub tail keeps playing
-                // at the same fixed volume, per user requirement.
+                // NOW (stop feeding the model once the source is gone — the
+                // model stays silent on Persian input, so its own dub tail in
+                // the capture is useless uplink). Playback is NOT touched:
+                // the queued dub tail keeps playing at the same fixed volume,
+                // per user requirement.
                 if (gateOpen.getAndSet(false)) {
                     log("source cut ($reason) — uplink gate CLOSED (dub tail keeps playing at fixed volume)")
                 }
