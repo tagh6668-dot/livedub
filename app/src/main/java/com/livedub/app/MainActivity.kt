@@ -102,12 +102,10 @@ class MainActivity : AppCompatActivity() {
         volumeBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 volumeLabel.text = "$progress٪"
-                // Live-update running service ratio too
+                // Live-update running service ratio; the service re-applies
+                // the original-audio duck with the new ratio.
                 DubService.instance?.dubVolumeRatio = progress / 100f
-                DubService.instance?.let {
-                    // Also lower the ORIGINAL (other apps') audio so the ratio holds:
-                    setOtherAppsVolume(1f - progress / 100f)
-                }
+                DubService.instance?.reapplyOriginalDuck()
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
             override fun onStopTrackingTouch(sb: SeekBar?) {

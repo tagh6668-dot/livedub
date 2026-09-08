@@ -39,6 +39,13 @@ class DubService : Service() {
         // Uplink silence gate tuning (chunks are 100ms @ 16kHz)
         const val GATE_CLOSE_RMS = 120              // below this a chunk counts as silence
         const val GATE_SILENT_CHUNKS_TO_CLOSE = 10  // 10 x 100ms = 1s gap closes the gate
+
+        // Dub ducking: when the original source is cut or ends, the gate closes
+        // and the dub must fade out instead of continuing at full mix level.
+        const val DUCK_OFF_GAIN = 0.0f
+        const val DUCK_DROP_MS = 150L        // fade-down duration when gate closes
+        const val DUCK_RELEASE_MS = 250L     // fade-up duration when audio returns
+        const val DUCK_QUEUE_KEEP_MS = 400L  // stale tail kept after a source cut
     }
 
     private val running = AtomicBoolean(false)
@@ -47,6 +54,8 @@ class DubService : Service() {
     private var ws: WebSocketClient? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var mediaProjection: MediaProjection? = null
+    private var audioManager: AudioManager? = null
+    private var playbackCallback: AudioManager.AudioPlaybackCallback? = null
 
     // Volume ratio: dub volume relative to original (0.0 - 1.0 multiplier applied to dub)
     @Volatile var dubVolumeRatio: Float = 0.8f
@@ -177,6 +186,15 @@ class DubService : Service() {
         content.optJSONObject("outputTranscription")?.optString("text")?.let {
             if (it.isNotBlank()) setStatus("دوبله: $it")
         }
+        // Barge-in style turn interruption from the server: anything still
+        // queued is stale — drop it so old dub doesn't keep playing.
+        if (content.optBoolean("interrupted") || content.has("interruption")) {
+            val n = playbackQueue.size
+            if (n > 0) {
+                playbackQueue.clear()
+                log("interruption — cleared $n queued dub chunks")
+            }
+        }
         val modelTurn = content.optJSONObject("modelTurn")
         if (modelTurn != null) {
             val parts = modelTurn.optJSONArray("parts") ?: return
@@ -230,6 +248,24 @@ class DubService : Service() {
             .build()
         track.play()
 
+        // ---- Track external players so the original-audio duck survives ----
+        // New players start at full volume; re-apply the duck whenever the
+        // set of active playback configs changes.
+        audioManager = getSystemService(AUDIO_SERVICE) as AudioManager
+        val cb = object : AudioManager.AudioPlaybackCallback() {
+            override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
+                applyOriginalDuck()
+            }
+        }
+        playbackCallback = cb
+        try {
+            audioManager?.registerAudioPlaybackCallback(cb, mainHandler)
+            applyOriginalDuck()
+            log("playback callback registered — original duck kept in sync")
+        } catch (e: Exception) {
+            log("playback cb register failed: ${e.message}")
+        }
+
         playbackThread = Thread {
             while (running.get()) {
                 val chunk = playbackQueue.poll()
@@ -237,9 +273,13 @@ class DubService : Service() {
                     try { Thread.sleep(10) } catch (_: InterruptedException) {}
                     continue
                 }
-                // Apply dub/original volume ratio by scaling samples
-                applyGain(chunk, dubVolumeRatio)
-                track.write(chunk, 0, chunk.size, AudioTrack.WRITE_BLOCKING)
+                // Dub ducking follows the uplink gate: when the original source
+                // goes silent or stops, the dub fades out instead of continuing
+                // at full level over silence; it fades back up when audio returns.
+                val gateNow = gateOpen.get()
+                val target = if (gateNow) dubVolumeRatio else DUCK_OFF_GAIN
+                applyGain(chunk.pcm, dubGain.follow(target, if (gateNow) DUCK_RELEASE_MS else DUCK_DROP_MS))
+                track.write(chunk.pcm, 0, chunk.pcm.size, AudioTrack.WRITE_BLOCKING)
             }
             track.stop(); track.release()
         }.also { it.start() }
@@ -319,6 +359,9 @@ class DubService : Service() {
                             if (consecutiveSilentChunks >= GATE_SILENT_CHUNKS_TO_CLOSE) {
                                 gateOpen.set(false)
                                 log("silence gate CLOSED (no real audio for ${GATE_SILENT_CHUNKS_TO_CLOSE}x100ms) — uplink paused")
+                                // Original audio stopped/cut: kill the dub's
+                                // loud tail immediately and fade the channel.
+                                onSourceSilence()
                             }
                         } else {
                             consecutiveSilentChunks = 0
@@ -367,8 +410,12 @@ class DubService : Service() {
         var sum = 0L; var cnt = 0
         var i = 0
         while (i + 1 < len) {
-            val sample = ((buf[i + 1].toInt() and 0xFF) shl 8) or (buf[i].toInt() and 0xFF)
-            sum += sample.toLong() * sample
+            val u = ((buf[i + 1].toInt() and 0xFF) shl 8) or (buf[i].toInt() and 0xFF)
+            // Sign-extend: an unsigned read turns -1 into 65535 and would
+            // inflate RMS for tiny negative samples, keeping the gate open
+            // on noise instead of closing on true silence.
+            val s = if (u >= 32768) u - 65536 else u
+            sum += s.toLong() * s
             cnt++
             i += 2
         }
@@ -381,7 +428,36 @@ class DubService : Service() {
         return true
     }
 
-    private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<ByteArray>()
+    private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<DubChunk>()
+
+    /** Time-stamped dub chunk so a source cut can drop the stale tail. */
+    private class DubChunk(val pcm: ByteArray, val atMs: Long)
+
+    /**
+     * Smooth gain follower: ramps the dub channel toward a target gain.
+     * Call-cadence independent (time-based), so it works no matter how often
+     * the playback thread pulls chunks.
+     */
+    private class GainFollower(start: Float) {
+        private var applied = start
+        private var lastTs = 0L
+
+        fun follow(target: Float, durMs: Long): Float {
+            val now = android.os.SystemClock.elapsedRealtime()
+            val dt = if (lastTs == 0L) durMs else (now - lastTs).coerceAtLeast(0L)
+            lastTs = now
+            if (durMs <= 0 || dt >= durMs) {
+                applied = target
+            } else {
+                applied += (target - applied) * (dt.toFloat() / durMs)
+            }
+            return applied
+        }
+    }
+
+    // Dub gain follows the uplink gate: gate open → dubVolumeRatio, gate
+    // closed (original source cut/ended) → fade to DUCK_OFF_GAIN.
+    private val dubGain = GainFollower(0f)
 
     // ---- Uplink silence gate ----
     // The translate model's session can get "primed" by an opening stretch of
@@ -394,7 +470,57 @@ class DubService : Service() {
     private var consecutiveSilentChunks = 0L
 
     private fun enqueuePlayback(pcm: ByteArray) {
-        playbackQueue.add(pcm)
+        playbackQueue.add(DubChunk(pcm, android.os.SystemClock.elapsedRealtime()))
+    }
+
+    /**
+     * Gate just closed: the original audio was cut or ended. Flush the stale
+     * dub tail so it doesn't keep playing loudly over silence. A small window
+     * of recent chunks is kept so a brief audio hiccup doesn't sound chopped.
+     */
+    private fun onSourceSilence() {
+        val now = android.os.SystemClock.elapsedRealtime()
+        var dropped = 0
+        val keep = ArrayDeque<DubChunk>()
+        while (true) {
+            val c = playbackQueue.poll() ?: break
+            if (now - c.atMs <= DUCK_QUEUE_KEEP_MS) keep.add(c) else dropped++
+        }
+        keep.forEach { playbackQueue.add(it) }
+        if (dropped > 0) log("source cut/ended — flushed $dropped stale dub chunks (${keep.size} kept)")
+    }
+
+    /** Public re-apply hook so the UI slider can retune the live duck. */
+    fun reapplyOriginalDuck() {
+        mainHandler.post { applyOriginalDuck() }
+    }
+
+    /**
+     * Re-apply the original-audio duck across all currently active external
+     * players. Every new AudioTrack starts at full volume, so without this the
+     * duck applied at start would be lost the moment the player app changes
+     * tracks or a new player appears.
+     */
+    private fun applyOriginalDuck() {
+        val am = audioManager ?: return
+        val duck = (1f - dubVolumeRatio).coerceIn(0f, 1f)
+        val myPid = android.os.Process.myPid()
+        try {
+            for (cfg in am.activePlaybackConfigurations) {
+                val ua = cfg.audioAttributes.usage
+                if (ua != AudioAttributes.USAGE_MEDIA && ua != AudioAttributes.USAGE_GAME) continue
+                // mClientPid is hidden — read via reflection; 0 on failure (skip)
+                val pid = try {
+                    val f = cfg.javaClass.getDeclaredField("mClientPid")
+                    f.isAccessible = true
+                    f.getInt(cfg)
+                } catch (e: Exception) { 0 }
+                if (pid == myPid) continue
+                RootVolumeHelper.setAppVolume(this, cfg, pid, duck)
+            }
+        } catch (e: Exception) {
+            log("per-app duck failed: ${e.message}")
+        }
     }
 
     private fun applyGain(samples: ByteArray, gain: Float) {
@@ -419,6 +545,8 @@ class DubService : Service() {
 
     private fun cleanup() {
         running.set(false)
+        try { playbackCallback?.let { cb -> audioManager?.unregisterAudioPlaybackCallback(cb) } } catch (_: Exception) {}
+        playbackCallback = null
         try { ws?.close() } catch (_: Exception) {}
         try { mediaProjection?.stop() } catch (_: Exception) {}
     }
@@ -427,6 +555,8 @@ class DubService : Service() {
         running.set(false)
         isRunning = false
         instance = null
+        try { playbackCallback?.let { cb -> audioManager?.unregisterAudioPlaybackCallback(cb) } } catch (_: Exception) {}
+        playbackCallback = null
         try { ws?.close() } catch (_: Exception) {}
         try { mediaProjection?.stop() } catch (_: Exception) {}
         super.onDestroy()
