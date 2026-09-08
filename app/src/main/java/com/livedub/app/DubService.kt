@@ -39,14 +39,11 @@ class DubService : Service() {
         // Uplink silence gate tuning (chunks are 100ms @ 16kHz)
         const val GATE_CLOSE_RMS = 120              // below this a chunk counts as silence
         const val GATE_SILENT_CHUNKS_TO_CLOSE = 10  // 10 x 100ms = 1s gap closes the gate
-        const val DUCK_OFF_GAIN = 0.0f
-        const val DUCK_DROP_MS = 150L        // fade-down duration when gate closes
-        const val DUCK_RELEASE_MS = 250L     // fade-up duration when audio returns
-        const val DUCK_QUEUE_KEEP_MS = 400L  // stale tail kept after a source cut
 
-        // Dub ducking: when the original source is cut, paused or ends, the gate
-        // closes and the dub must fade out instead of continuing at full mix level.
-        const val DUB_DUCK_NOTE = "gate-linked ducker"
+        // Dub playback is UNTOUCHED by the uplink gate: when the original
+        // source stops, the queued dub tail keeps playing at the SAME fixed
+        // volume. The gate exists only to stop the model from hearing the
+        // dub's own loopback and re-translating it (the loud-tail bug).
     }
 
     private val running = AtomicBoolean(false)
@@ -198,18 +195,10 @@ class DubService : Service() {
         }
         val modelTurn = content.optJSONObject("modelTurn")
         if (modelTurn != null) {
-            // Gate closed = source gone. Any audio arriving now is the model's
-            // lagging tail: drop it here so nothing stale even reaches the
-            // playback queue (belt & suspenders with onSourceSilence()).
-            if (!gateOpen.get()) {
-                var dropped = 0
-                val parts = modelTurn.optJSONArray("parts")
-                for (i in 0 until (parts?.length() ?: 0)) {
-                    if (parts?.optJSONObject(i)?.optJSONObject("inlineData")?.optString("data")?.isNotEmpty() == true) dropped++
-                }
-                if (dropped > 0) log("gate closed — dropped $dropped late model audio chunk(s)")
-                return
-            }
+            // NOTE: the uplink gate NEVER gates playback. When the original
+            // source stops, the dub tail (~5s of lag) must keep playing at the
+            // same fixed volume — every chunk that arrives is queued and
+            // played normally.
             val parts = modelTurn.optJSONArray("parts") ?: return
             for (i in 0 until parts.length()) {
                 val inline = parts.optJSONObject(i)?.optJSONObject("inlineData") ?: continue
@@ -290,12 +279,10 @@ class DubService : Service() {
                     try { Thread.sleep(10) } catch (_: InterruptedException) {}
                     continue
                 }
-                // Dub ducking follows the uplink gate: when the original source
-                // goes silent or stops, the dub fades out instead of continuing
-                // at full level over silence; it fades back up when audio returns.
-                val gateNow = gateOpen.get()
-                val target = if (gateNow) dubVolumeRatio else DUCK_OFF_GAIN
-                applyGain(chunk.pcm, dubGain.follow(target, if (gateNow) DUCK_RELEASE_MS else DUCK_DROP_MS))
+                // Fixed dub volume: the uplink gate has no say here. Whether
+                // the original source is playing or has stopped, every dub
+                // chunk plays at exactly dubVolumeRatio — no fade, no duck.
+                applyGain(chunk.pcm, dubVolumeRatio)
                 track.write(chunk.pcm, 0, chunk.pcm.size, AudioTrack.WRITE_BLOCKING)
             }
             track.stop(); track.release()
@@ -380,10 +367,9 @@ class DubService : Service() {
                             if (consecutiveSilentChunks >= GATE_SILENT_CHUNKS_TO_CLOSE) {
                                 gateOpen.set(false)
                                 val why = if (!extActive) "no active external player" else "silence ${GATE_SILENT_CHUNKS_TO_CLOSE}x100ms"
+                                // Uplink only: the dub tail keeps playing at
+                                // fixed volume — playback is never gated.
                                 log("silence gate CLOSED ($why) — uplink paused (last rms=$peak)")
-                                // Original audio stopped/cut: kill the dub's
-                                // loud tail immediately and fade the channel.
-                                onSourceSilence()
                             } else if (!quiet && consecutiveSilentChunks % 5L == 0L) {
                                 // Loud audio but no external player: loopback or
                                 // something is feeding us — keep counting down.
@@ -457,34 +443,8 @@ class DubService : Service() {
 
     private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<DubChunk>()
 
-    /** Time-stamped dub chunk so a source cut can drop the stale tail. */
+    /** Time-stamped dub chunk (kept for future diagnostics; playback is FIFO). */
     private class DubChunk(val pcm: ByteArray, val atMs: Long)
-
-    /**
-     * Smooth gain follower: ramps the dub channel toward a target gain.
-     * Call-cadence independent (time-based), so it works no matter how often
-     * the playback thread pulls chunks.
-     */
-    private class GainFollower(start: Float) {
-        private var applied = start
-        private var lastTs = 0L
-
-        fun follow(target: Float, durMs: Long): Float {
-            val now = android.os.SystemClock.elapsedRealtime()
-            val dt = if (lastTs == 0L) durMs else (now - lastTs).coerceAtLeast(0L)
-            lastTs = now
-            if (durMs <= 0 || dt >= durMs) {
-                applied = target
-            } else {
-                applied += (target - applied) * (dt.toFloat() / durMs)
-            }
-            return applied
-        }
-    }
-
-    // Dub gain follows the uplink gate: gate open → dubVolumeRatio, gate
-    // closed (original source cut/ended) → fade to DUCK_OFF_GAIN.
-    private val dubGain = GainFollower(0f)
 
     // ---- Uplink silence gate ----
     // The translate model's session can get "primed" by an opening stretch of
@@ -537,9 +497,13 @@ class DubService : Service() {
         if (was != active) {
             log("external player $reason: active=$was->$active (uid=$uid)")
             if (!active) {
-                // Original source paused/stopped/ended → close the gate NOW and
-                // duck the dub; do not wait for the RMS-based path.
-                closeGateForSourceCut("player $reason")
+                // Original source paused/stopped/ended → close the UPLINK gate
+                // NOW (so the model can't hear the dub's own tail and echo it).
+                // Playback is NOT touched: the queued dub tail keeps playing
+                // at the same fixed volume, per user requirement.
+                if (gateOpen.getAndSet(false)) {
+                    log("source cut ($reason) — uplink gate CLOSED (dub tail keeps playing at fixed volume)")
+                }
             } else {
                 consecutiveSilentChunks = 0
                 gateOpen.set(true)
@@ -548,36 +512,8 @@ class DubService : Service() {
         }
     }
 
-    /** Close the uplink gate and flush the stale dub tail (source cut). */
-    private fun closeGateForSourceCut(reason: String) {
-        if (gateOpen.getAndSet(false)) {
-            log("source cut ($reason) — gate CLOSED, flushing dub tail")
-            onSourceSilence()
-        } else {
-            // Already closed; still trim any freshly queued tail.
-            onSourceSilence()
-        }
-    }
-
     private fun enqueuePlayback(pcm: ByteArray) {
         playbackQueue.add(DubChunk(pcm, android.os.SystemClock.elapsedRealtime()))
-    }
-
-    /**
-     * Gate just closed: the original audio was cut or ended. Flush the stale
-     * dub tail so it doesn't keep playing loudly over silence. A small window
-     * of recent chunks is kept so a brief audio hiccup doesn't sound chopped.
-     */
-    private fun onSourceSilence() {
-        val now = android.os.SystemClock.elapsedRealtime()
-        var dropped = 0
-        val keep = ArrayDeque<DubChunk>()
-        while (true) {
-            val c = playbackQueue.poll() ?: break
-            if (now - c.atMs <= DUCK_QUEUE_KEEP_MS) keep.add(c) else dropped++
-        }
-        keep.forEach { playbackQueue.add(it) }
-        if (dropped > 0) log("source cut/ended — flushed $dropped stale dub chunks (${keep.size} kept)")
     }
 
     /** Public re-apply hook so the UI slider can retune the live duck. */
