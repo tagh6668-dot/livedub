@@ -39,13 +39,14 @@ class DubService : Service() {
         // Uplink silence gate tuning (chunks are 100ms @ 16kHz)
         const val GATE_CLOSE_RMS = 120              // below this a chunk counts as silence
         const val GATE_SILENT_CHUNKS_TO_CLOSE = 10  // 10 x 100ms = 1s gap closes the gate
-
-        // Dub ducking: when the original source is cut or ends, the gate closes
-        // and the dub must fade out instead of continuing at full mix level.
         const val DUCK_OFF_GAIN = 0.0f
         const val DUCK_DROP_MS = 150L        // fade-down duration when gate closes
         const val DUCK_RELEASE_MS = 250L     // fade-up duration when audio returns
         const val DUCK_QUEUE_KEEP_MS = 400L  // stale tail kept after a source cut
+
+        // Dub ducking: when the original source is cut, paused or ends, the gate
+        // closes and the dub must fade out instead of continuing at full mix level.
+        const val DUB_DUCK_NOTE = "gate-linked ducker"
     }
 
     private val running = AtomicBoolean(false)
@@ -197,6 +198,18 @@ class DubService : Service() {
         }
         val modelTurn = content.optJSONObject("modelTurn")
         if (modelTurn != null) {
+            // Gate closed = source gone. Any audio arriving now is the model's
+            // lagging tail: drop it here so nothing stale even reaches the
+            // playback queue (belt & suspenders with onSourceSilence()).
+            if (!gateOpen.get()) {
+                var dropped = 0
+                val parts = modelTurn.optJSONArray("parts")
+                for (i in 0 until (parts?.length() ?: 0)) {
+                    if (parts?.optJSONObject(i)?.optJSONObject("inlineData")?.optString("data")?.isNotEmpty() == true) dropped++
+                }
+                if (dropped > 0) log("gate closed — dropped $dropped late model audio chunk(s)")
+                return
+            }
             val parts = modelTurn.optJSONArray("parts") ?: return
             for (i in 0 until parts.length()) {
                 val inline = parts.optJSONObject(i)?.optJSONObject("inlineData") ?: continue
@@ -255,12 +268,16 @@ class DubService : Service() {
         val cb = object : AudioManager.AudioPlaybackCallback() {
             override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
                 applyOriginalDuck()
+                // A pause/stop of the external player shows up here first —
+                // close the gate immediately instead of waiting for silence.
+                refreshExternalPlayerActive("config changed")
             }
         }
         playbackCallback = cb
         try {
             audioManager?.registerAudioPlaybackCallback(cb, mainHandler)
             applyOriginalDuck()
+            refreshExternalPlayerActive("initial scan")
             log("playback callback registered — original duck kept in sync")
         } catch (e: Exception) {
             log("playback cb register failed: ${e.message}")
@@ -353,15 +370,24 @@ class DubService : Service() {
                     // ---- Silence gate: NEVER feed zero-audio to the model ----
                     // A session opened with stretches of digital silence gets
                     // stuck emitting zero-PCM dub audio forever (prime bug).
+                    // Gate = RMS-quiet AND no active external player (AND-gate):
+                    // our own dub loopback or UI sounds must not hold it open.
                     if (gateOpen.get()) {
-                        if (peak < GATE_CLOSE_RMS) {
+                        val extActive = externalPlayerActive
+                        if (peak < GATE_CLOSE_RMS || !extActive) {
                             consecutiveSilentChunks++
+                            val quiet = peak < GATE_CLOSE_RMS
                             if (consecutiveSilentChunks >= GATE_SILENT_CHUNKS_TO_CLOSE) {
                                 gateOpen.set(false)
-                                log("silence gate CLOSED (no real audio for ${GATE_SILENT_CHUNKS_TO_CLOSE}x100ms) — uplink paused")
+                                val why = if (!extActive) "no active external player" else "silence ${GATE_SILENT_CHUNKS_TO_CLOSE}x100ms"
+                                log("silence gate CLOSED ($why) — uplink paused (last rms=$peak)")
                                 // Original audio stopped/cut: kill the dub's
                                 // loud tail immediately and fade the channel.
                                 onSourceSilence()
+                            } else if (!quiet && consecutiveSilentChunks % 5L == 0L) {
+                                // Loud audio but no external player: loopback or
+                                // something is feeding us — keep counting down.
+                                log("gate closing countdown=$consecutiveSilentChunks (rms=$peak but no external player)")
                             }
                         } else {
                             consecutiveSilentChunks = 0
@@ -378,12 +404,13 @@ class DubService : Service() {
                         if (chunksSent % 300 == 11L) log("capture mostly silent (n=$n) — check audio routing")
                     }
                     if (!gateOpen.get()) {
-                        // Hold uplink; media keeps playing locally. Reopen as
-                        // soon as real audio reappears (peak >= threshold).
-                        if (peak >= GATE_CLOSE_RMS) {
+                        // Hold uplink; media keeps playing locally. Reopen only
+                        // when BOTH real audio is present AND an external
+                        // player is actively playing (loopback can be loud).
+                        if (peak >= GATE_CLOSE_RMS && externalPlayerActive) {
                             gateOpen.set(true)
                             consecutiveSilentChunks = 0
-                            log("silence gate OPEN — real audio detected (rms=$peak), uplink resumed")
+                            log("silence gate OPEN — real audio + external player active (rms=$peak), uplink resumed")
                         }
                         continue
                     }
@@ -468,6 +495,69 @@ class DubService : Service() {
     // sound appears, so the session is always primed with actual audio.
     private val gateOpen = AtomicBoolean(true)
     private var consecutiveSilentChunks = 0L
+
+    // True while some OTHER app is actively playing media. The capture stream
+    // can contain our own dub playback (loopback) or system sounds, so RMS
+    // alone cannot prove the original source is alive. A pause/stop of the
+    // external player flips this to false instantly via AudioPlaybackCallback
+    // and closes the gate even if captured audio is non-silent.
+    @Volatile private var externalPlayerActive = false
+
+    /** Refresh the external-player-active flag from current playback configs. */
+    private fun refreshExternalPlayerActive(reason: String) {
+        val am = audioManager ?: return
+        var active = false
+        var uid = 0
+        try {
+            val myUid = android.os.Process.myUid()
+            for (cfg in am.activePlaybackConfigurations) {
+                // Only usage MEDIA/GAME count as the "original source" we dub.
+                val ua = cfg.audioAttributes.usage
+                if (ua != AudioAttributes.USAGE_MEDIA && ua != AudioAttributes.USAGE_GAME) continue
+                // Skip our own playback (dub loopback must not hold the gate open).
+                val isMine = try {
+                    val f = cfg.javaClass.getDeclaredField("mClientUid")
+                    f.isAccessible = true
+                    f.getInt(cfg) == myUid
+                } catch (e: Exception) { false }
+                if (isMine) continue
+                active = true
+                uid = try {
+                    val f = cfg.javaClass.getDeclaredField("mClientUid")
+                    f.isAccessible = true
+                    f.getInt(cfg)
+                } catch (e: Exception) { 0 }
+                break
+            }
+        } catch (e: Exception) {
+            log("ext player scan failed: ${e.message}")
+        }
+        val was = externalPlayerActive
+        externalPlayerActive = active
+        if (was != active) {
+            log("external player $reason: active=$was->$active (uid=$uid)")
+            if (!active) {
+                // Original source paused/stopped/ended → close the gate NOW and
+                // duck the dub; do not wait for the RMS-based path.
+                closeGateForSourceCut("player $reason")
+            } else {
+                consecutiveSilentChunks = 0
+                gateOpen.set(true)
+                log("silence gate OPEN — external player active again")
+            }
+        }
+    }
+
+    /** Close the uplink gate and flush the stale dub tail (source cut). */
+    private fun closeGateForSourceCut(reason: String) {
+        if (gateOpen.getAndSet(false)) {
+            log("source cut ($reason) — gate CLOSED, flushing dub tail")
+            onSourceSilence()
+        } else {
+            // Already closed; still trim any freshly queued tail.
+            onSourceSilence()
+        }
+    }
 
     private fun enqueuePlayback(pcm: ByteArray) {
         playbackQueue.add(DubChunk(pcm, android.os.SystemClock.elapsedRealtime()))
