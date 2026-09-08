@@ -35,6 +35,10 @@ class DubService : Service() {
          * Consumed once in startAudioPipeline(), then nulled.
          */
         var pendingProjection: MediaProjection? = null
+
+        // Uplink silence gate tuning (chunks are 100ms @ 16kHz)
+        const val GATE_CLOSE_RMS = 120              // below this a chunk counts as silence
+        const val GATE_SILENT_CHUNKS_TO_CLOSE = 10  // 10 x 100ms = 1s gap closes the gate
     }
 
     private val running = AtomicBoolean(false)
@@ -185,6 +189,14 @@ class DubService : Service() {
                     if (audioChunksReceived % 50L == 1L) {
                         log("audio out: chunk#$audioChunksReceived (${pcm.size}B pcm, queue=${playbackQueue.size})")
                     }
+                    if (isAllZeroPcm(pcm)) {
+                        // All-zero model audio = the "primed on silence" bug
+                        // (session opened with zero-input now emits digital
+                        // silence). Don't play it and don't let it silence the
+                        // live audio; real dub audio follows a nonzero chunk.
+                        if (audioChunksReceived % 50L == 1L) log("model audio all-zero — ignored (prime recovery)")
+                        continue
+                    }
                     enqueuePlayback(pcm)
                 }
             }
@@ -296,14 +308,41 @@ class DubService : Service() {
                 val n = audioRecord.read(buf, 0, buf.size)
                 if (n > 0) {
                     chunksSent++; bytesSent += n
+                    val peak = rms(buf, n)
+
+                    // ---- Silence gate: NEVER feed zero-audio to the model ----
+                    // A session opened with stretches of digital silence gets
+                    // stuck emitting zero-PCM dub audio forever (prime bug).
+                    if (gateOpen.get()) {
+                        if (peak < GATE_CLOSE_RMS) {
+                            consecutiveSilentChunks++
+                            if (consecutiveSilentChunks >= GATE_SILENT_CHUNKS_TO_CLOSE) {
+                                gateOpen.set(false)
+                                log("silence gate CLOSED (no real audio for ${GATE_SILENT_CHUNKS_TO_CLOSE}x100ms) — uplink paused")
+                            }
+                        } else {
+                            consecutiveSilentChunks = 0
+                        }
+                    }
+
                     if (chunksSent % 100 == 10L) {
-                        // periodic heartbeat: ~every 10s
-                        val peak = rms(buf, n)
-                        log("capture alive: chunk#$chunksSent (${bytesSent / 1024}KB sent), rms=$peak")
+                        // periodic heartbeat: ~every 10s, now includes gate state
+                        log("capture alive: chunk#$chunksSent (${bytesSent / 1024}KB sent), rms=$peak, gate=" +
+                            (if (gateOpen.get()) "OPEN" else "CLOSED"))
                     }
                     if (n < buf.size / 4) {
                         // Mostly-silence chunk: worth logging once in a while
                         if (chunksSent % 300 == 11L) log("capture mostly silent (n=$n) — check audio routing")
+                    }
+                    if (!gateOpen.get()) {
+                        // Hold uplink; media keeps playing locally. Reopen as
+                        // soon as real audio reappears (peak >= threshold).
+                        if (peak >= GATE_CLOSE_RMS) {
+                            gateOpen.set(true)
+                            consecutiveSilentChunks = 0
+                            log("silence gate OPEN — real audio detected (rms=$peak), uplink resumed")
+                        }
+                        continue
                     }
                     val b64 = android.util.Base64.encodeToString(buf.copyOf(n), android.util.Base64.NO_WRAP)
                     val m = JSONObject().put(
@@ -336,7 +375,23 @@ class DubService : Service() {
         return if (cnt == 0) 0 else kotlin.math.sqrt(sum / cnt.toDouble()).toInt()
     }
 
+    /** True when the PCM16 buffer is entirely zero (digital silence). */
+    private fun isAllZeroPcm(pcm: ByteArray): Boolean {
+        for (b in pcm) if (b.toInt() != 0) return false
+        return true
+    }
+
     private val playbackQueue = java.util.concurrent.ConcurrentLinkedQueue<ByteArray>()
+
+    // ---- Uplink silence gate ----
+    // The translate model's session can get "primed" by an opening stretch of
+    // all-zero audio (dub started before any media was playing): it then keeps
+    // emitting zero-PCM audio with no transcription even once real audio
+    // arrives (seen in logs: rms=0 chunks fed for 22s → dead output). Fix:
+    // never stream silence to the model — the uplink only opens when real
+    // sound appears, so the session is always primed with actual audio.
+    private val gateOpen = AtomicBoolean(true)
+    private var consecutiveSilentChunks = 0L
 
     private fun enqueuePlayback(pcm: ByteArray) {
         playbackQueue.add(pcm)
