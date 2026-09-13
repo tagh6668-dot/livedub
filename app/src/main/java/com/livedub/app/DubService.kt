@@ -102,7 +102,7 @@ class DubService : Service() {
         }
     }
 
-    private fun connectWebSocket(apiKey: String {
+    private fun connectWebSocket(apiKey: String) {
         val url = URI("wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey")
         ws = object : WebSocketClient(url) {
             override fun onOpen(handshakedata: ServerHandshake?) {
@@ -168,7 +168,7 @@ class DubService : Service() {
     private val maxReconnectAttempts = 6
     private var reconnectScheduled = false
 
-    private fun scheduleReconnect(apiKey: String {
+    private fun scheduleReconnect(apiKey: String) {
         if (!running.get()) return
         if (reconnectScheduled) return
         if (reconnectAttempts >= maxReconnectAttempts) {
