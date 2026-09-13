@@ -102,10 +102,11 @@ class DubService : Service() {
         }
     }
 
-    private fun connectWebSocket(apiKey: String) {
+    private fun connectWebSocket(apiKey: String {
         val url = URI("wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=$apiKey")
         ws = object : WebSocketClient(url) {
             override fun onOpen(handshakedata: ServerHandshake?) {
+                reconnectAttempts = 0
                 log("WS connected")
                 sendSetupMessage()
             }
@@ -133,16 +134,72 @@ class DubService : Service() {
             }
             override fun onClose(code: Int, reason: String?, remote: Boolean) {
                 log("WS closed code=$code reason=$reason remote=$remote")
-                setStatus("قطع شد: ${reason ?: code}")
-                stopSelf()
+                // Stale client (a reconnect already replaced this instance)?
+                // Ignore its close event so it can't schedule a duplicate.
+                if (this !== ws) { log("stale ws close event ignored"); return }
+                // Server closes (GoAway after the ~10min session cap) and
+                // failed connects are both RECOVERABLE — keep the audio
+                // pipeline (capture/playback/MediaProjection) running and
+                // reconnect with backoff. Only a user Stop (running=false)
+                // or exhausting all retries ends the session.
+                if (running.get()) {
+                    setStatus("سرور جلسه را بست — اتصال مجدد…")
+                    scheduleReconnect(apiKey)
+                } else {
+                    setStatus("قطع شد: ${reason ?: code}")
+                    stopSelf()
+                }
             }
             override fun onError(ex: Exception?) {
                 log("WS error: ${ex?.message}")
-                setStatus("خطا: ${ex?.message}")
+                // onError is always followed by onClose in java-websocket;
+                // reconnect is driven from there. Only update the status.
+                if (running.get()) setStatus("خطا: ${ex?.message}")
             }
         }
         ws?.connect()
     }
+
+    // ---- Auto-reconnect after server closes the Live API session ----
+    // Google closes each BidiGenerateContent session after its duration cap
+    // (GoAway). Without reconnect the app silently stopped dubbing every
+    // ~10 minutes; with this it reconnects and keeps going.
+    private var reconnectAttempts = 0
+    private val maxReconnectAttempts = 6
+    private var reconnectScheduled = false
+
+    private fun scheduleReconnect(apiKey: String {
+        if (!running.get()) return
+        if (reconnectScheduled) return
+        if (reconnectAttempts >= maxReconnectAttempts) {
+            log("reconnect gave up after $maxReconnectAttempts attempts")
+            setStatus("اتصال مجدد ناموفق — دوبله متوقف شد")
+            stopSelf()
+            return
+        }
+        reconnectScheduled = true
+        reconnectAttempts++
+        // Backoff: 1s, 2s, 5s, 10s, then 10s
+        val delayMs = when (reconnectAttempts) {
+            1 -> 1000L; 2 -> 2000L; 3 -> 5000L; else -> 10000L
+        }
+        log("reconnect #$reconnectAttempts in ${delayMs}ms")
+        setStatus("اتصال مجدد (تلاش $reconnectAttempts/$maxReconnectAttempts)…")
+        mainHandler.postDelayed({
+            reconnectScheduled = false
+            if (!running.get()) return@postDelayed
+            try { ws?.close() } catch (_: Exception) {}
+            connectWebSocket(apiKey)
+        }, delayMs)
+    }
+
+    /**
+     * The audio pipeline (AudioRecord capture, AudioTrack playback,
+     * MediaProjection) is deliberately LEFT RUNNING across reconnects:
+     * it is independent of the WebSocket, the MediaProjection token cannot
+     * be re-obtained without new user consent, and dub resumes the moment
+     * the new session's setupComplete arrives.
+     */
 
     private fun sendSetupMessage() {
         // Field map verified against google-genai SDK (_live_converters.py,
